@@ -69,30 +69,49 @@ export default function DashboardClient({
           ))}
         </div>
 
-        <div className="flex items-center gap-2">
-          {people.length > 0 && (
-            <select
-              className="input w-auto"
-              value={personFilter}
-              onChange={(e) => setPersonFilter(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
-            >
-              <option value="ALL">Everyone</option>
-              {people.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          )}
-          <Link href="/search" className="btn-primary">
-            + Add a film
-          </Link>
-        </div>
+        <Link href="/search" className="btn-primary">
+          + Add a film
+        </Link>
       </div>
+
+      {people.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs font-medium uppercase tracking-wide text-base-400">Watch with</span>
+          <button
+            onClick={() => setPersonFilter('ALL')}
+            className={`badge border transition-colors ${
+              personFilter === 'ALL'
+                ? 'border-transparent bg-accent-500 text-white'
+                : 'border-base-700 bg-transparent text-base-400 hover:border-base-600 hover:text-base-200'
+            }`}
+          >
+            Everyone
+          </button>
+          {people.map((p) => {
+            const selected = personFilter === p.id;
+            return (
+              <button
+                key={p.id}
+                onClick={() => setPersonFilter(selected ? 'ALL' : p.id)}
+                className={`badge border transition-colors ${
+                  selected
+                    ? 'border-transparent text-white'
+                    : 'border-base-700 bg-transparent text-base-400 hover:border-base-600 hover:text-base-200'
+                }`}
+                style={selected ? { backgroundColor: p.color ?? '#6c5ce7' } : undefined}
+              >
+                {p.name}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {filtered.length === 0 ? (
         <div className="card p-10 text-center text-base-400">
-          <p className="mb-3">Nothing here yet.</p>
+          <p className="mb-3">
+            {personFilter === 'ALL' ? 'Nothing here yet.' : 'Nothing tagged with them yet.'}
+          </p>
           <Link href="/search" className="btn-primary inline-flex">
             Search for a film
           </Link>
