@@ -7,6 +7,7 @@ export interface MovieDTO {
   overview: string | null;
   runtime: number | null;
   releaseDate: string | null;
+  certification: string | null;
 }
 
 export interface PersonDTO {
@@ -30,4 +31,8 @@ export interface WatchlistItemDTO {
   movie: MovieDTO;
   people: { person: PersonDTO }[];
   places: { place: PlaceDTO }[];
+}
+
+export interface PersonWithFilmsDTO extends PersonDTO {
+  films: { watchlistItemId: number; status: WatchlistItemDTO['status']; movie: MovieDTO }[];
 }

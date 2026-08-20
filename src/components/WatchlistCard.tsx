@@ -65,8 +65,15 @@ export default function WatchlistCard({
       <div className="min-w-0 flex-1 space-y-3">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <h3 className="font-semibold text-base-200">
-              {item.movie.title} {item.movie.year && <span className="text-base-400">({item.movie.year})</span>}
+            <h3 className="flex flex-wrap items-center gap-2 font-semibold text-base-200">
+              <span>
+                {item.movie.title} {item.movie.year && <span className="text-base-400">({item.movie.year})</span>}
+              </span>
+              {item.movie.certification && (
+                <span className="rounded border border-base-600 px-1 text-[10px] font-medium leading-tight text-base-300">
+                  {item.movie.certification}
+                </span>
+              )}
             </h3>
             {item.movie.runtime && <p className="text-xs text-base-400">{item.movie.runtime} min</p>}
           </div>

@@ -16,6 +16,7 @@ model Movie {
   overview    String?
   runtime     Int?
   releaseDate String?
+  certification String?
   createdAt   DateTime @default(now())
 
   watchlistItems WatchlistItem[]

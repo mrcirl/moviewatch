@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { requireApiAuth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { getJellyfinMovieIndex } from '@/lib/jellyfin';
-import { getMovieDetails, TmdbNotConfiguredError } from '@/lib/tmdb';
+import { getMovieDetails, extractCertification, TmdbNotConfiguredError } from '@/lib/tmdb';
 import { getSettings } from '@/lib/settings';
 
 const CONCURRENCY = 5;
@@ -49,6 +49,7 @@ export async function POST() {
 
   const jellyfinTmdbIds = [...index.keys()];
   const toImport = jellyfinTmdbIds.filter((id) => !existingTmdbIds.has(id));
+  const region = settings.tmdbRegion || 'US';
 
   let imported = 0;
   const failures: string[] = [];
@@ -67,6 +68,7 @@ export async function POST() {
             overview: details.overview,
             runtime: details.runtime,
             releaseDate: details.release_date,
+            certification: extractCertification(details, region),
           },
         });
       }

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireApiAuth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { getMovieDetails, TmdbNotConfiguredError } from '@/lib/tmdb';
+import { getMovieDetails, extractCertification, TmdbNotConfiguredError } from '@/lib/tmdb';
 import { serializeWatchlistItem } from '@/lib/serialize';
+import { getSettings } from '@/lib/settings';
 
 const watchlistInclude = {
   movie: true,
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
   let movie = await prisma.movie.findUnique({ where: { tmdbId } });
   if (!movie) {
     try {
-      const details = await getMovieDetails(tmdbId);
+      const [details, settings] = await Promise.all([getMovieDetails(tmdbId), getSettings()]);
       movie = await prisma.movie.create({
         data: {
           tmdbId: details.id,
@@ -43,6 +44,7 @@ export async function POST(req: NextRequest) {
           overview: details.overview,
           runtime: details.runtime,
           releaseDate: details.release_date,
+          certification: extractCertification(details, settings.tmdbRegion || 'US'),
         },
       });
     } catch (err) {
