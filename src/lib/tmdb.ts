@@ -63,6 +63,12 @@ export interface TmdbMovieDetails {
       }
     >;
   };
+  release_dates?: {
+    results?: {
+      iso_3166_1: string;
+      release_dates: { certification: string; type: number }[];
+    }[];
+  };
 }
 
 export async function searchMovies(query: string): Promise<TmdbSearchResult[]> {
@@ -75,7 +81,14 @@ export async function searchMovies(query: string): Promise<TmdbSearchResult[]> {
 }
 
 export async function getMovieDetails(tmdbId: number): Promise<TmdbMovieDetails> {
-  return tmdbFetch<TmdbMovieDetails>(`/movie/${tmdbId}`, { append_to_response: 'watch/providers' });
+  return tmdbFetch<TmdbMovieDetails>(`/movie/${tmdbId}`, { append_to_response: 'watch/providers,release_dates' });
+}
+
+/** Age/content rating (e.g. "PG-13") for the given region, or null if TMDB has none on file. */
+export function extractCertification(details: TmdbMovieDetails, region: string): string | null {
+  const forRegion = details.release_dates?.results?.find((r) => r.iso_3166_1 === region);
+  const withCert = forRegion?.release_dates.find((r) => r.certification.trim() !== '');
+  return withCert?.certification || null;
 }
 
 /** Watch-provider availability for the configured region (defaults to US). */

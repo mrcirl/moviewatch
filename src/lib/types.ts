@@ -7,6 +7,7 @@ export interface MovieDTO {
   overview: string | null;
   runtime: number | null;
   releaseDate: string | null;
+  certification: string | null;
 }
 
 export interface PersonDTO {

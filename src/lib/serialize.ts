@@ -12,6 +12,7 @@ export function serializeMovie(movie: Movie): MovieDTO {
     overview: movie.overview,
     runtime: movie.runtime,
     releaseDate: movie.releaseDate,
+    certification: movie.certification,
   };
 }
 
