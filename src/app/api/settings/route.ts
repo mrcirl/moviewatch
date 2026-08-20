@@ -10,6 +10,7 @@ function publicSettings(settings: Awaited<ReturnType<typeof getSettings>>) {
     jellyfinApiKey: settings.jellyfinApiKey ?? '',
     seerrUrl: settings.seerrUrl ?? '',
     seerrApiKey: settings.seerrApiKey ?? '',
+    authBypassCidrs: settings.authBypassCidrs ?? '',
   };
 }
 
@@ -26,7 +27,15 @@ export async function PUT(req: NextRequest) {
   if (unauthorized) return unauthorized;
 
   const body = await req.json();
-  const allowed = ['tmdbApiKey', 'tmdbRegion', 'jellyfinUrl', 'jellyfinApiKey', 'seerrUrl', 'seerrApiKey'] as const;
+  const allowed = [
+    'tmdbApiKey',
+    'tmdbRegion',
+    'jellyfinUrl',
+    'jellyfinApiKey',
+    'seerrUrl',
+    'seerrApiKey',
+    'authBypassCidrs',
+  ] as const;
   const data: Record<string, string | null> = {};
   for (const key of allowed) {
     if (key in body) {

@@ -14,7 +14,8 @@ Jellyfin server, available to stream, or worth requesting through
 - **Availability** — each entry shows whether it's already in your Jellyfin
   library (with a direct link), what streaming services have it, and its
   request status on Seerr — with a one-click "Request via Seerr" button.
-- Single-user, password-protected, no external accounts required.
+- Single-user, password-protected, no external accounts required — or skip
+  the password entirely for requests from a trusted LAN range (see below).
 
 ## Running with Docker (recommended)
 
@@ -78,6 +79,22 @@ no restart required.
 Jellyfin and Seerr are optional — MovieWatch works as a plain watchlist/tagging
 app without them, and TMDB streaming-provider info still shows if only a TMDB
 key is set.
+
+### Skipping login on a trusted network
+
+If MovieWatch never leaves your LAN, you can make the password optional for
+requests from an allowlisted range: Settings → **Trusted network (skip
+login)** → enter one or more IPs/CIDRs (comma or newline separated, e.g.
+`192.168.1.0/24`). Matching requests skip login entirely — including the
+first-run password setup — while everyone else still needs the password.
+
+This checks the actual TCP connection's source address (via the custom
+`server.js`, not a client-supplied header), so it can't be spoofed by a
+request claiming a different IP. That also means it only works for a **direct**
+deployment (e.g. Unraid's plain `-p 3000:3000` port mapping) — if you later
+put MovieWatch behind a reverse proxy, the address it sees is the proxy's,
+not the original client's, so don't enable this alongside one unless you're
+certain what the proxy forwards.
 
 ## Local development
 

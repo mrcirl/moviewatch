@@ -1,8 +1,9 @@
 import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { NextRequest, NextResponse } from 'next/server';
+import { isIpAllowlisted } from '@/lib/ip';
 import { getSettings, updateSettings } from '@/lib/settings';
 
 export const SESSION_COOKIE = 'mw_session';
@@ -72,7 +73,26 @@ export async function verifySessionToken(token: string | undefined): Promise<boo
   }
 }
 
+/**
+ * The client IP as seen by server.js (the raw TCP peer address, injected as
+ * `x-client-ip` and not overridable by the client — see server.js). Behind a
+ * reverse proxy this will be the proxy's own address, not the real client's.
+ */
+async function getClientIp(): Promise<string | null> {
+  const store = await headers();
+  return store.get('x-client-ip');
+}
+
+/** True if the requesting IP falls within the configured allowlist, skipping auth entirely. */
+async function isIpBypassed(): Promise<boolean> {
+  const settings = await getSettings();
+  if (!settings.authBypassCidrs) return false;
+  const ip = await getClientIp();
+  return isIpAllowlisted(ip, settings.authBypassCidrs);
+}
+
 export async function isAuthenticated(): Promise<boolean> {
+  if (await isIpBypassed()) return true;
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
   return verifySessionToken(token);
@@ -85,10 +105,10 @@ export async function isPasswordSet(): Promise<boolean> {
 
 /** Call at the top of a protected server-component page. Redirects if not set up / not logged in. */
 export async function requireAuth(): Promise<void> {
+  if (await isAuthenticated()) return;
   const setup = await isPasswordSet();
   if (!setup) redirect('/setup');
-  const authed = await isAuthenticated();
-  if (!authed) redirect('/login');
+  redirect('/login');
 }
 
 /** Call from /login and /setup pages to bounce already-authenticated users to the dashboard. */

@@ -18,6 +18,7 @@ export default async function SettingsPage() {
           jellyfinApiKey: settings.jellyfinApiKey ?? '',
           seerrUrl: settings.seerrUrl ?? '',
           seerrApiKey: settings.seerrApiKey ?? '',
+          authBypassCidrs: settings.authBypassCidrs ?? '',
         }}
       />
     </div>

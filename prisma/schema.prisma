@@ -82,4 +82,5 @@ model Settings {
   jellyfinApiKey String?
   seerrUrl       String?
   seerrApiKey    String?
+  authBypassCidrs String?
 }

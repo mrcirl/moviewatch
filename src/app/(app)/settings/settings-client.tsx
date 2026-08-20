@@ -9,6 +9,7 @@ interface SettingsForm {
   jellyfinApiKey: string;
   seerrUrl: string;
   seerrApiKey: string;
+  authBypassCidrs: string;
 }
 
 function Field({
@@ -20,6 +21,20 @@ function Field({
     <div className="space-y-1.5">
       <label className="text-sm font-medium text-base-200">{label}</label>
       <input className="input" {...props} />
+      {hint && <p className="text-xs text-base-400">{hint}</p>}
+    </div>
+  );
+}
+
+function TextAreaField({
+  label,
+  hint,
+  ...props
+}: React.TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string; hint?: string }) {
+  return (
+    <div className="space-y-1.5">
+      <label className="text-sm font-medium text-base-200">{label}</label>
+      <textarea className="input" rows={3} {...props} />
       {hint && <p className="text-xs text-base-400">{hint}</p>}
     </div>
   );
@@ -101,6 +116,23 @@ export default function SettingsClient({ initialSettings }: { initialSettings: S
           hint="Found under Seerr Settings → General."
           value={form.seerrApiKey}
           onChange={(e) => set('seerrApiKey', e.target.value)}
+        />
+
+        <div className="border-t border-base-800 pt-5">
+          <h2 className="font-medium text-base-200">Trusted network (skip login)</h2>
+          <p className="text-xs text-base-400">
+            Requests from these IPs/ranges skip password login entirely — including the very first setup
+            screen. Only meaningful for a direct LAN exposure (e.g. a plain Docker port mapping on Unraid);
+            it does <span className="italic">not</span> identify individual clients if this app sits behind
+            a reverse proxy, since the proxy&apos;s own address is what gets checked.
+          </p>
+        </div>
+        <TextAreaField
+          label="Allowlisted IPs / CIDR ranges"
+          hint="Comma or newline separated, e.g. 192.168.1.0/24, 10.0.0.5. Leave blank to always require login."
+          value={form.authBypassCidrs}
+          onChange={(e) => set('authBypassCidrs', e.target.value)}
+          placeholder="192.168.1.0/24"
         />
 
         <div className="flex items-center gap-3 pt-2">
