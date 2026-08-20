@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Movie {
+  id          Int      @id @default(autoincrement())
+  tmdbId      Int      @unique
+  title       String
+  year        Int?
+  posterPath  String?
+  overview    String?
+  runtime     Int?
+  releaseDate String?
+  createdAt   DateTime @default(now())
+
+  watchlistItems WatchlistItem[]
+}
+
+model WatchlistItem {
+  id        Int         @id @default(autoincrement())
+  movie     Movie       @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  movieId   Int
+  status    String    @default("WANT_TO_WATCH")
+  notes     String?
+  addedAt   DateTime  @default(now())
+  watchedAt DateTime?
+
+  people WatchlistItemPerson[]
+  places WatchlistItemPlace[]
+
+  @@unique([movieId])
+}
+
+model Person {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  color     String?
+  createdAt DateTime @default(now())
+
+  items WatchlistItemPerson[]
+}
+
+model WatchlistItemPerson {
+  watchlistItem   WatchlistItem @relation(fields: [watchlistItemId], references: [id], onDelete: Cascade)
+  watchlistItemId Int
+  person          Person        @relation(fields: [personId], references: [id], onDelete: Cascade)
+  personId        Int
+
+  @@id([watchlistItemId, personId])
+}
+
+model Place {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  notes     String?
+  createdAt DateTime @default(now())
+
+  items WatchlistItemPlace[]
+}
+
+model WatchlistItemPlace {
+  watchlistItem   WatchlistItem @relation(fields: [watchlistItemId], references: [id], onDelete: Cascade)
+  watchlistItemId Int
+  place           Place         @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  placeId         Int
+
+  @@id([watchlistItemId, placeId])
+}
+
+model Settings {
+  id             Int     @id @default(1)
+  passwordHash   String?
+  authSecret     String?
+  tmdbApiKey     String?
+  tmdbRegion     String  @default("US")
+  jellyfinUrl    String?
+  jellyfinApiKey String?
+  seerrUrl       String?
+  seerrApiKey    String?
+}

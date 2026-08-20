@@ -1,0 +1,14 @@
+services:
+  moviewatch:
+    build: .
+    container_name: moviewatch
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - moviewatch-data:/data
+    environment:
+      - DATABASE_URL=file:/data/moviewatch.db
+
+volumes:
+  moviewatch-data:
