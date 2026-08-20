@@ -1,6 +1,6 @@
 import type { Movie, Person, Place, WatchlistItem, WatchlistItemPerson, WatchlistItemPlace } from '@prisma/client';
 import { posterUrl } from '@/lib/tmdb';
-import type { MovieDTO, PersonDTO, PlaceDTO, WatchlistItemDTO } from '@/lib/types';
+import type { MovieDTO, PersonDTO, PersonWithFilmsDTO, PlaceDTO, WatchlistItemDTO } from '@/lib/types';
 
 export function serializeMovie(movie: Movie): MovieDTO {
   return {
@@ -22,6 +22,21 @@ export function serializePerson(person: Person): PersonDTO {
 
 export function serializePlace(place: Place): PlaceDTO {
   return { id: place.id, name: place.name, notes: place.notes };
+}
+
+type PersonWithItems = Person & {
+  items: (WatchlistItemPerson & { watchlistItem: WatchlistItem & { movie: Movie } })[];
+};
+
+export function serializePersonWithFilms(person: PersonWithItems): PersonWithFilmsDTO {
+  const films = person.items
+    .map((i) => ({
+      watchlistItemId: i.watchlistItem.id,
+      status: i.watchlistItem.status as WatchlistItemDTO['status'],
+      movie: serializeMovie(i.watchlistItem.movie),
+    }))
+    .sort((a, b) => a.movie.title.localeCompare(b.movie.title));
+  return { ...serializePerson(person), films };
 }
 
 type FullWatchlistItem = WatchlistItem & {

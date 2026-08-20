@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import type { PersonDTO } from '@/lib/types';
+import type { PersonWithFilmsDTO } from '@/lib/types';
 
 const COLORS = ['#6c5ce7', '#e17055', '#00b894', '#0984e3', '#fdcb6e', '#e84393', '#00cec9', '#636e72'];
 
-export default function PeopleClient({ initialPeople }: { initialPeople: PersonDTO[] }) {
+export default function PeopleClient({ initialPeople }: { initialPeople: PersonWithFilmsDTO[] }) {
   const [people, setPeople] = useState(initialPeople);
   const [name, setName] = useState('');
   const [color, setColor] = useState(COLORS[0]);
@@ -25,7 +25,8 @@ export default function PeopleClient({ initialPeople }: { initialPeople: PersonD
       setError(data.error ?? 'Could not add person.');
       return;
     }
-    setPeople((prev) => [...prev, data.person].sort((a, b) => a.name.localeCompare(b.name)));
+    const person: PersonWithFilmsDTO = { ...data.person, films: [] };
+    setPeople((prev) => [...prev, person].sort((a, b) => a.name.localeCompare(b.name)));
     setName('');
   }
 
@@ -63,14 +64,42 @@ export default function PeopleClient({ initialPeople }: { initialPeople: PersonD
       </form>
       {error && <p className="text-sm text-red-400">{error}</p>}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="space-y-3">
         {people.map((p) => (
-          <div key={p.id} className="badge gap-2 border border-base-700 pr-1 text-base-200">
-            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: p.color ?? '#6c5ce7' }} />
-            {p.name}
-            <button onClick={() => removePerson(p.id)} className="text-base-400 hover:text-red-400" aria-label={`Remove ${p.name}`}>
-              ×
-            </button>
+          <div key={p.id} className="card space-y-3 p-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="badge gap-2 border border-base-700 text-base-200">
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: p.color ?? '#6c5ce7' }} />
+                {p.name}
+              </div>
+              <button
+                onClick={() => removePerson(p.id)}
+                className="text-xs text-base-400 hover:text-red-400"
+                aria-label={`Remove ${p.name}`}
+              >
+                Remove
+              </button>
+            </div>
+
+            {p.films.length === 0 ? (
+              <p className="text-xs text-base-400">Not tagged on anything yet.</p>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {p.films.map((f) => (
+                  <span
+                    key={f.watchlistItemId}
+                    className={`badge border border-base-700 text-xs ${
+                      f.status === 'WATCHED' ? 'text-base-500 line-through' : 'text-base-300'
+                    }`}
+                    title={f.status === 'WATCHED' ? 'Watched' : 'Want to watch'}
+                  >
+                    {f.status === 'WATCHED' && '✓ '}
+                    {f.movie.title}
+                    {f.movie.year && ` (${f.movie.year})`}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         ))}
         {people.length === 0 && <p className="text-sm text-base-400">No one added yet.</p>}

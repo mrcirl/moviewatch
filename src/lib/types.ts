@@ -32,3 +32,7 @@ export interface WatchlistItemDTO {
   people: { person: PersonDTO }[];
   places: { place: PlaceDTO }[];
 }
+
+export interface PersonWithFilmsDTO extends PersonDTO {
+  films: { watchlistItemId: number; status: WatchlistItemDTO['status']; movie: MovieDTO }[];
+}
