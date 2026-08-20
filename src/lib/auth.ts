@@ -2,11 +2,24 @@ import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getSettings, updateSettings } from '@/lib/settings';
 
 export const SESSION_COOKIE = 'mw_session';
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+/**
+ * `next start` always sets NODE_ENV=production, so gating the cookie's Secure
+ * flag on NODE_ENV marks it Secure even when served over plain HTTP (the
+ * common case for a LAN-only self-hosted deploy) — browsers then silently
+ * drop it. Key off the request's actual scheme instead, respecting
+ * X-Forwarded-Proto from a reverse proxy.
+ */
+export function isSecureRequest(req: NextRequest): boolean {
+  const forwardedProto = req.headers.get('x-forwarded-proto');
+  if (forwardedProto) return forwardedProto.split(',')[0].trim() === 'https';
+  return req.nextUrl.protocol === 'https:';
+}
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10);

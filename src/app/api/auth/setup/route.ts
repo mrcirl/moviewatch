@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getSettings, updateSettings } from '@/lib/settings';
-import { hashPassword, createSessionToken, SESSION_COOKIE } from '@/lib/auth';
+import { hashPassword, createSessionToken, isSecureRequest, SESSION_COOKIE } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   const settings = await getSettings();
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   store.set(SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    secure: isSecureRequest(req),
     path: '/',
     maxAge: 60 * 60 * 24 * 30,
   });
