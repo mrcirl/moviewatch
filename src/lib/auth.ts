@@ -92,10 +92,16 @@ async function isIpBypassed(): Promise<boolean> {
 }
 
 export async function isAuthenticated(): Promise<boolean> {
-  if (await isIpBypassed()) return true;
+  // `cookies()` must be the first thing awaited here: it's how Next.js
+  // detects a route needs dynamic rendering during the build's static
+  // analysis pass, and bails out of it cleanly. Hitting the database first
+  // (e.g. via isIpBypassed()'s getSettings() call) throws a real Prisma
+  // error instead during that pass, since DATABASE_URL isn't set until the
+  // container actually runs — which fails the whole build.
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
-  return verifySessionToken(token);
+  if (await verifySessionToken(token)) return true;
+  return isIpBypassed();
 }
 
 export async function isPasswordSet(): Promise<boolean> {
