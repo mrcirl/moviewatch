@@ -42,4 +42,5 @@
   <Labels/>
   <Config Name="WebUI Port" Target="3000" Default="3000" Mode="tcp" Description="Port to access the MovieWatch web UI" Type="Port" Display="always" Required="true" Mask="false">3000</Config>
   <Config Name="Appdata" Target="/data" Default="/mnt/user/appdata/moviewatch" Mode="rw" Description="SQLite database storage" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/moviewatch</Config>
+  <Config Name="Trusted proxy CIDRs" Target="TRUSTED_PROXY_CIDRS" Default="" Mode="" Description="Only needed behind a reverse proxy: its address (CIDR), so the Settings IP allowlist sees the real client instead of the proxy" Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
 </Container>

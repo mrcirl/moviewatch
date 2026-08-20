@@ -9,6 +9,11 @@ services:
       - moviewatch-data:/data
     environment:
       - DATABASE_URL=file:/data/moviewatch.db
+      # Only needed if MovieWatch sits behind a reverse proxy and you want
+      # the Settings -> "Trusted network" IP allowlist to see the real
+      # client address instead of the proxy's. Set to the proxy's address
+      # (e.g. its container's address on this Docker network).
+      # - TRUSTED_PROXY_CIDRS=172.18.0.0/16
 
 volumes:
   moviewatch-data:

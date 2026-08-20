@@ -122,9 +122,9 @@ export default function SettingsClient({ initialSettings }: { initialSettings: S
           <h2 className="font-medium text-base-200">Trusted network (skip login)</h2>
           <p className="text-xs text-base-400">
             Requests from these IPs/ranges skip password login entirely — including the very first setup
-            screen. Only meaningful for a direct LAN exposure (e.g. a plain Docker port mapping on Unraid);
-            it does <span className="italic">not</span> identify individual clients if this app sits behind
-            a reverse proxy, since the proxy&apos;s own address is what gets checked.
+            screen. Behind a reverse proxy, this checks the proxy&apos;s own address by default, not the
+            original client&apos;s — set the <code className="text-base-300">TRUSTED_PROXY_CIDRS</code>{' '}
+            environment variable to your proxy&apos;s address to fix that (see README).
           </p>
         </div>
         <TextAreaField

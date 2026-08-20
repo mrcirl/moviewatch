@@ -89,12 +89,30 @@ login)** → enter one or more IPs/CIDRs (comma or newline separated, e.g.
 first-run password setup — while everyone else still needs the password.
 
 This checks the actual TCP connection's source address (via the custom
-`server.js`, not a client-supplied header), so it can't be spoofed by a
-request claiming a different IP. That also means it only works for a **direct**
-deployment (e.g. Unraid's plain `-p 3000:3000` port mapping) — if you later
-put MovieWatch behind a reverse proxy, the address it sees is the proxy's,
-not the original client's, so don't enable this alongside one unless you're
-certain what the proxy forwards.
+`server.js`, not a client-supplied header by default), so it can't be spoofed
+by a request claiming a different IP.
+
+#### Behind a reverse proxy
+
+By default the address checked is whoever connects directly to the
+container — if that's a reverse proxy, every request looks like it's coming
+from the proxy, not the original client, so the allowlist won't distinguish
+visitors. To fix that, set the **`TRUSTED_PROXY_CIDRS`** environment variable
+to your proxy's address (comma/newline separated CIDRs/IPs — e.g. the
+proxy container's address on your Docker network, such as `172.18.0.0/16`).
+Once set:
+
+- Requests arriving directly from that address use its `X-Forwarded-For`
+  header to find the real client, walking back through any chained trusted
+  proxies to the first untrusted hop.
+- Requests from anywhere else have their `X-Forwarded-For` ignored entirely
+  and use the direct connection address instead — so a request that isn't
+  actually coming through your proxy can't forge that header to claim a
+  trusted IP.
+
+Only set this to addresses you actually trust to report client IPs
+truthfully — anything in that range can claim to be any client. Leave it
+unset for a direct exposure (no reverse proxy), which is the safer default.
 
 ## Local development
 
