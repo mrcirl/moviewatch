@@ -26,6 +26,44 @@ This builds the app and starts it on [http://localhost:3000](http://localhost:30
 storing its SQLite database in a named Docker volume (`moviewatch-data`) so it
 survives rebuilds. On first visit you'll be asked to set a password.
 
+## Running on Unraid
+
+A prebuilt image is published to GHCR (`ghcr.io/mrcirl/moviewatch`) by
+[`.github/workflows/docker-publish.yml`](.github/workflows/docker-publish.yml)
+on every push to `main` (and can be triggered manually from the Actions tab
+via "Run workflow" on any branch). One-time setup:
+
+1. Push/merge to `main` (or manually run the workflow) so the image gets built.
+2. On GitHub, go to the repo → **Packages** → `moviewatch` → **Package settings**
+   → change visibility to **Public** (or, to keep it private, add a GHCR
+   read-only PAT under Unraid's Docker settings → registry credentials).
+3. In Unraid, go to the **Docker** tab → **Add Container**, and either:
+   - paste this repo's template URL —
+     `https://raw.githubusercontent.com/mrcirl/moviewatch/main/unraid-template.xml`
+     — into the template field at the bottom of the Add Container page, or
+   - fill the fields in manually:
+
+     | Field | Value |
+     | --- | --- |
+     | Repository | `ghcr.io/mrcirl/moviewatch:latest` |
+     | Network Type | Bridge |
+     | Port | `3000` → `3000` (or any host port you prefer) |
+     | Path | `/mnt/user/appdata/moviewatch` → `/data` |
+
+4. Apply, then open `http://<unraid-ip>:3000` and set your password on first
+   visit. The SQLite database lives entirely under the appdata path above, so
+   it's included in whatever backs up `/mnt/user/appdata` (e.g. the CA
+   Appdata Backup plugin).
+5. To update later: re-pull the `latest` tag (Unraid's Docker tab flags
+   updates automatically once the workflow publishes a new image) and restart
+   the container — `docker-entrypoint.sh` runs the database migration
+   automatically on startup.
+
+If Jellyfin and/or Seerr also run on the same Unraid box, use their
+container's Unraid hostname (e.g. `http://jellyfin:8096`) or the box's LAN IP
+in MovieWatch's Settings page — not `localhost`, since each container is its
+own network namespace.
+
 ## Configuring integrations
 
 Everything below is configured from the **Settings** page after you log in —

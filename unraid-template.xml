@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>MovieWatch</Name>
+  <Repository>ghcr.io/mrcirl/moviewatch:latest</Repository>
+  <Registry>https://github.com/mrcirl/moviewatch/pkgs/container/moviewatch</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/mrcirl/moviewatch/issues</Support>
+  <Project>https://github.com/mrcirl/moviewatch</Project>
+  <Overview>Self-hosted watchlist for films: bookmark what you want to watch, tag who you want to watch it with, tag physical places to watch, and see whether it's already on Jellyfin, what's streaming it, or request it via Seerr.</Overview>
+  <Category>MediaApp:Video Tools:</Category>
+  <WebUI>http://[IP]:[PORT:3000]/</WebUI>
+  <TemplateURL>https://raw.githubusercontent.com/mrcirl/moviewatch/main/unraid-template.xml</TemplateURL>
+  <Icon/>
+  <ExtraParams/>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled/>
+  <DonateText/>
+  <DonateLink/>
+  <Description>Self-hosted watchlist for films: bookmark what you want to watch, tag who you want to watch it with, tag physical places to watch, and see whether it's already on Jellyfin, what's streaming it, or request it via Seerr.</Description>
+  <Networking>
+    <Mode>bridge</Mode>
+    <Publish>
+      <Port>
+        <HostPort>3000</HostPort>
+        <ContainerPort>3000</ContainerPort>
+        <Protocol>tcp</Protocol>
+      </Port>
+    </Publish>
+  </Networking>
+  <Data>
+    <Volume>
+      <HostDir>/mnt/user/appdata/moviewatch</HostDir>
+      <ContainerDir>/data</ContainerDir>
+      <Mode>rw</Mode>
+    </Volume>
+  </Data>
+  <Environment/>
+  <Labels/>
+  <Config Name="WebUI Port" Target="3000" Default="3000" Mode="tcp" Description="Port to access the MovieWatch web UI" Type="Port" Display="always" Required="true" Mask="false">3000</Config>
+  <Config Name="Appdata" Target="/data" Default="/mnt/user/appdata/moviewatch" Mode="rw" Description="SQLite database storage" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/moviewatch</Config>
+</Container>
