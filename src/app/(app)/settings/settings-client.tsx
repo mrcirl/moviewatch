@@ -143,7 +143,75 @@ export default function SettingsClient({ initialSettings }: { initialSettings: S
         </div>
       </form>
 
+      <JellyfinSyncPanel
+        configured={Boolean(initialSettings.jellyfinUrl.trim() && initialSettings.jellyfinApiKey.trim())}
+      />
       <PasswordForm />
+    </div>
+  );
+}
+
+function JellyfinSyncPanel({ configured }: { configured: boolean }) {
+  const [refreshing, setRefreshing] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function refresh() {
+    setRefreshing(true);
+    setMessage(null);
+    setError(null);
+    const res = await fetch('/api/jellyfin/refresh', { method: 'POST' });
+    const data = await res.json().catch(() => ({}));
+    setRefreshing(false);
+    if (!res.ok) {
+      setError(data.error ?? 'Could not refresh from Jellyfin.');
+      return;
+    }
+    setMessage(`Refreshed — ${data.movieCount} movie${data.movieCount === 1 ? '' : 's'} in your Jellyfin library.`);
+  }
+
+  async function importLibrary() {
+    if (!confirm('Add every movie in your Jellyfin library that isn\'t already on your watchlist, as a new "want to watch" entry?')) {
+      return;
+    }
+    setImporting(true);
+    setMessage(null);
+    setError(null);
+    const res = await fetch('/api/jellyfin/import', { method: 'POST' });
+    const data = await res.json().catch(() => ({}));
+    setImporting(false);
+    if (!res.ok) {
+      setError(data.error ?? 'Could not import from Jellyfin.');
+      return;
+    }
+    const failedNote = data.failed > 0 ? `, ${data.failed} failed` : '';
+    setMessage(
+      `Imported ${data.imported} new film${data.imported === 1 ? '' : 's'} ` +
+        `(${data.alreadyOnWatchlist} already on your watchlist${failedNote}).`,
+    );
+  }
+
+  return (
+    <div className="card space-y-4 p-5">
+      <div>
+        <h2 className="font-medium text-base-200">Resync from Jellyfin</h2>
+        <p className="text-xs text-base-400">
+          {configured
+            ? 'Availability checks are cached for a minute at a time — refresh to pick up new Jellyfin content immediately, or pull your whole library into the watchlist.'
+            : 'Add a Jellyfin server URL and API key above, then save, to enable this.'}
+        </p>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="button" className="btn-secondary" onClick={refresh} disabled={!configured || refreshing}>
+          {refreshing ? 'Refreshing…' : 'Refresh availability now'}
+        </button>
+        <button type="button" className="btn-secondary" onClick={importLibrary} disabled={!configured || importing}>
+          {importing ? 'Importing…' : 'Import library into watchlist'}
+        </button>
+      </div>
+      {error && <p className="text-sm text-red-400">{error}</p>}
+      {message && <p className="text-sm text-base-400">{message}</p>}
     </div>
   );
 }

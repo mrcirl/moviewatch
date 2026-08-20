@@ -44,19 +44,33 @@ async function fetchMovieIndex(base: string, apiKey: string): Promise<Map<number
   return byTmdbId;
 }
 
-/** Looks up a movie in the configured Jellyfin server by its TMDB provider id. */
-export async function checkJellyfinAvailability(tmdbId: number): Promise<JellyfinAvailability | null> {
+/**
+ * The Jellyfin movie library indexed by TMDB id. Cached for CACHE_TTL_MS;
+ * pass `force: true` to bypass the cache and re-fetch immediately (used by
+ * the manual "resync" action). Returns null if Jellyfin isn't configured.
+ */
+export async function getJellyfinMovieIndex(opts: { force?: boolean } = {}): Promise<Map<number, JellyfinItem> | null> {
   const settings = await getSettings();
   if (!settings.jellyfinUrl || !settings.jellyfinApiKey) return null;
 
   const base = settings.jellyfinUrl.replace(/\/+$/, '');
 
-  if (!cache || cache.base !== base || cache.expires < Date.now()) {
+  if (opts.force || !cache || cache.base !== base || cache.expires < Date.now()) {
     const byTmdbId = await fetchMovieIndex(base, settings.jellyfinApiKey);
     cache = { base, byTmdbId, expires: Date.now() + CACHE_TTL_MS };
   }
 
-  const item = cache.byTmdbId.get(tmdbId);
+  return cache.byTmdbId;
+}
+
+/** Looks up a movie in the configured Jellyfin server by its TMDB provider id. */
+export async function checkJellyfinAvailability(tmdbId: number): Promise<JellyfinAvailability | null> {
+  const settings = await getSettings();
+  if (!settings.jellyfinUrl || !settings.jellyfinApiKey) return null;
+  const base = settings.jellyfinUrl.replace(/\/+$/, '');
+
+  const index = await getJellyfinMovieIndex();
+  const item = index?.get(tmdbId);
   if (!item) return { available: false };
   return {
     available: true,
