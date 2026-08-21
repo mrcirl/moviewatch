@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 const links = [
   { href: '/', label: 'Watchlist' },
   { href: '/search', label: 'Search' },
+  { href: '/recommended', label: 'Recommended' },
   { href: '/people', label: 'People' },
   { href: '/places', label: 'Places' },
   { href: '/settings', label: 'Settings' },
