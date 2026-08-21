@@ -1,5 +1,5 @@
 import type { Movie, Person, Place, WatchlistItem, WatchlistItemPerson, WatchlistItemPlace } from '@prisma/client';
-import { posterUrl } from '@/lib/tmdb';
+import { posterUrl, trailerUrl } from '@/lib/tmdb';
 import type { MovieDTO, PersonDTO, PersonWithFilmsDTO, PlaceDTO, WatchlistItemDTO } from '@/lib/types';
 
 export function serializeMovie(movie: Movie): MovieDTO {
@@ -13,6 +13,7 @@ export function serializeMovie(movie: Movie): MovieDTO {
     runtime: movie.runtime,
     releaseDate: movie.releaseDate,
     certification: movie.certification,
+    trailerUrl: trailerUrl(movie.trailerKey),
   };
 }
 
@@ -50,6 +51,7 @@ export function serializeWatchlistItem(item: FullWatchlistItem): WatchlistItemDT
     id: item.id,
     status: item.status as WatchlistItemDTO['status'],
     notes: item.notes,
+    rating: item.rating,
     addedAt: item.addedAt.toISOString(),
     watchedAt: item.watchedAt ? item.watchedAt.toISOString() : null,
     movie: serializeMovie(item.movie),

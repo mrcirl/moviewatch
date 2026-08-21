@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { requireApiAuth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { getJellyfinMovieIndex } from '@/lib/jellyfin';
-import { getMovieDetails, extractCertification, TmdbNotConfiguredError } from '@/lib/tmdb';
+import { getMovieDetails, extractCertification, extractTrailerKey, TmdbNotConfiguredError } from '@/lib/tmdb';
 import { getSettings } from '@/lib/settings';
 
 const CONCURRENCY = 5;
@@ -69,6 +69,7 @@ export async function POST() {
             runtime: details.runtime,
             releaseDate: details.release_date,
             certification: extractCertification(details, region),
+            trailerKey: extractTrailerKey(details),
           },
         });
       }

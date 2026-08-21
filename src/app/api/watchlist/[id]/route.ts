@@ -21,23 +21,33 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (Number.isNaN(id)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
 
   const body = await req.json();
-  const { status, notes, personIds, placeIds } = body as {
+  const { status, notes, rating, personIds, placeIds } = body as {
     status?: 'WANT_TO_WATCH' | 'WATCHED';
     notes?: string | null;
+    rating?: number | null;
     personIds?: number[];
     placeIds?: number[];
   };
+  if (rating !== undefined && rating !== null && (!Number.isInteger(rating) || rating < 1 || rating > 5)) {
+    return NextResponse.json({ error: 'rating must be an integer from 1 to 5, or null' }, { status: 400 });
+  }
 
   const existing = await prisma.watchlistItem.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   await prisma.$transaction(async (tx) => {
-    const data: { status?: 'WANT_TO_WATCH' | 'WATCHED'; notes?: string | null; watchedAt?: Date | null } = {};
+    const data: {
+      status?: 'WANT_TO_WATCH' | 'WATCHED';
+      notes?: string | null;
+      rating?: number | null;
+      watchedAt?: Date | null;
+    } = {};
     if (status) {
       data.status = status;
       data.watchedAt = status === 'WATCHED' ? new Date() : null;
     }
     if (notes !== undefined) data.notes = notes;
+    if (rating !== undefined) data.rating = rating;
     if (Object.keys(data).length > 0) {
       await tx.watchlistItem.update({ where: { id }, data });
     }

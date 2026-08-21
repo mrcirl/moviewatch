@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireApiAuth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { getMovieDetails, extractCertification, TmdbNotConfiguredError } from '@/lib/tmdb';
+import { getMovieDetails, extractCertification, extractTrailerKey, TmdbNotConfiguredError } from '@/lib/tmdb';
 import { serializeWatchlistItem } from '@/lib/serialize';
 import { getSettings } from '@/lib/settings';
 
@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
           runtime: details.runtime,
           releaseDate: details.release_date,
           certification: extractCertification(details, settings.tmdbRegion || 'US'),
+          trailerKey: extractTrailerKey(details),
         },
       });
     } catch (err) {
