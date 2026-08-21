@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Logo from './Logo';
+import ThemePicker from './ThemePicker';
 
 const links = [
   { href: '/', label: 'Watchlist' },
@@ -57,6 +58,8 @@ export default function Nav() {
         <button onClick={logout} className="btn-ghost hidden text-sm md:inline-flex">
           Sign out
         </button>
+
+        <ThemePicker />
 
         <button
           onClick={() => setMenuOpen((o) => !o)}

@@ -240,7 +240,7 @@ function JellyfinSyncPanel({ configured }: { configured: boolean }) {
           {importing ? 'Importing…' : 'Import library into watchlist'}
         </button>
       </div>
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
       {message && <p className="text-sm text-base-400">{message}</p>}
     </div>
   );
@@ -309,7 +309,7 @@ function PlexSyncPanel({ configured }: { configured: boolean }) {
           {importing ? 'Importing…' : 'Import library into watchlist'}
         </button>
       </div>
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
       {message && <p className="text-sm text-base-400">{message}</p>}
     </div>
   );
@@ -366,16 +366,16 @@ function PlaylistSyncPanel({ configured }: { configured: boolean }) {
       <button type="button" className="btn-secondary" onClick={sync} disabled={!configured || syncing}>
         {syncing ? 'Syncing…' : 'Sync playlists now'}
       </button>
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
       {results && (
         <ul className="space-y-1 text-sm">
           {results.map((r) => (
             <li key={r.person} className="flex flex-wrap items-center gap-x-2 text-base-300">
               <span className="font-medium text-base-200">{r.person}</span>
               <span className="text-xs text-base-500">({r.filmCount} tagged)</span>
-              {r.plex && <span className={r.plex.ok ? 'text-emerald-400' : 'text-red-400'}>Plex: {outcomeLabel(r.plex)}</span>}
+              {r.plex && <span className={r.plex.ok ? 'text-emerald-400' : 'text-danger'}>Plex: {outcomeLabel(r.plex)}</span>}
               {r.jellyfin && (
-                <span className={r.jellyfin.ok ? 'text-emerald-400' : 'text-red-400'}>Jellyfin: {outcomeLabel(r.jellyfin)}</span>
+                <span className={r.jellyfin.ok ? 'text-emerald-400' : 'text-danger'}>Jellyfin: {outcomeLabel(r.jellyfin)}</span>
               )}
             </li>
           ))}
@@ -429,7 +429,7 @@ function PasswordForm() {
         value={newPassword}
         onChange={(e) => setNewPassword(e.target.value)}
       />
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
       <div className="flex items-center gap-3">
         <button type="submit" className="btn-secondary" disabled={saving}>
           {saving ? 'Saving…' : 'Change password'}

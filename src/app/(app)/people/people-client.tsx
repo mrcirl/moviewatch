@@ -62,7 +62,7 @@ export default function PeopleClient({ initialPeople }: { initialPeople: PersonW
           + Add person
         </button>
       </form>
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
 
       <div className="space-y-3">
         {people.map((p) => (
@@ -74,7 +74,7 @@ export default function PeopleClient({ initialPeople }: { initialPeople: PersonW
               </div>
               <button
                 onClick={() => removePerson(p.id)}
-                className="text-xs text-base-400 hover:text-red-400"
+                className="text-xs text-base-400 hover:text-danger"
                 aria-label={`Remove ${p.name}`}
               >
                 Remove

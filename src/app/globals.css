@@ -2,6 +2,114 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Theme system: a "style" (color identity) crossed with a "mode" (light/dark),
+ * selected via data-style/data-mode attributes on <html> — see
+ * src/lib/theme.ts and src/components/ThemePicker.tsx. Values are "R G B"
+ * triples (not hex) so Tailwind's opacity modifiers keep working, e.g.
+ * bg-base-950/90 in Nav.tsx.
+ *
+ * The default block (no attributes) matches synthwave/dark exactly, so a
+ * fresh visitor with nothing in localStorage yet sees today's look before
+ * the bootstrap script in layout.tsx sets the attributes.
+ */
+:root {
+  --color-base-950: 11 13 18;
+  --color-base-900: 18 21 28;
+  --color-base-800: 26 31 41;
+  --color-base-700: 36 43 56;
+  --color-base-600: 51 60 77;
+  --color-base-400: 135 145 163;
+  --color-base-200: 215 219 227;
+  --color-accent-500: 108 92 231;
+  --color-accent-400: 133 121 236;
+}
+
+:root[data-style='synthwave'][data-mode='dark'] {
+  --color-base-950: 11 13 18;
+  --color-base-900: 18 21 28;
+  --color-base-800: 26 31 41;
+  --color-base-700: 36 43 56;
+  --color-base-600: 51 60 77;
+  --color-base-400: 135 145 163;
+  --color-base-200: 215 219 227;
+  --color-accent-500: 108 92 231;
+  --color-accent-400: 133 121 236;
+}
+
+:root[data-style='synthwave'][data-mode='light'] {
+  --color-base-950: 246 244 252;
+  --color-base-900: 255 255 255;
+  --color-base-800: 233 228 248;
+  --color-base-700: 220 211 242;
+  --color-base-600: 195 182 232;
+  --color-base-400: 111 103 137;
+  --color-base-200: 36 31 56;
+  --color-accent-500: 108 92 231;
+  --color-accent-400: 125 107 238;
+}
+
+:root[data-style='classic'][data-mode='dark'] {
+  --color-base-950: 10 14 20;
+  --color-base-900: 19 26 34;
+  --color-base-800: 30 39 51;
+  --color-base-700: 44 57 71;
+  --color-base-600: 67 84 101;
+  --color-base-400: 139 152 168;
+  --color-base-200: 226 231 238;
+  --color-accent-500: 59 130 246;
+  --color-accent-400: 96 165 250;
+}
+
+:root[data-style='classic'][data-mode='light'] {
+  --color-base-950: 247 248 250;
+  --color-base-900: 255 255 255;
+  --color-base-800: 231 235 240;
+  --color-base-700: 215 222 230;
+  --color-base-600: 182 193 204;
+  --color-base-400: 100 116 139;
+  --color-base-200: 22 32 44;
+  --color-accent-500: 37 99 235;
+  --color-accent-400: 59 130 246;
+}
+
+:root[data-style='cinema'][data-mode='dark'] {
+  --color-base-950: 18 10 9;
+  --color-base-900: 29 18 17;
+  --color-base-800: 44 27 25;
+  --color-base-700: 63 38 36;
+  --color-base-600: 92 56 53;
+  --color-base-400: 179 154 140;
+  --color-base-200: 242 230 217;
+  --color-accent-500: 212 160 23;
+  --color-accent-400: 230 186 63;
+}
+
+:root[data-style='cinema'][data-mode='light'] {
+  --color-base-950: 250 244 233;
+  --color-base-900: 255 253 249;
+  --color-base-800: 236 222 196;
+  --color-base-700: 223 201 160;
+  --color-base-600: 194 160 106;
+  --color-base-400: 122 90 58;
+  --color-base-200: 43 26 16;
+  --color-accent-500: 169 114 11;
+  --color-accent-400: 196 138 23;
+}
+
+/* Danger is a functional color (errors, destructive actions) — it stays
+   consistent across styles and only adapts to light/dark for contrast. */
+:root,
+:root[data-mode='dark'] {
+  --color-danger: 248 113 113;
+  --color-danger-soft: 69 10 10;
+}
+
+:root[data-mode='light'] {
+  --color-danger: 220 38 38;
+  --color-danger-soft: 254 226 226;
+}
+
 @layer base {
   body {
     @apply bg-base-950 text-base-200;
@@ -22,7 +130,7 @@
     @apply btn bg-transparent text-base-400 hover:bg-base-800 hover:text-base-200;
   }
   .btn-danger {
-    @apply btn bg-transparent text-red-400 hover:bg-red-950;
+    @apply btn bg-transparent text-danger hover:bg-danger-soft;
   }
   .input {
     @apply w-full rounded-lg border border-base-700 bg-base-900 px-3 py-2 text-sm text-base-200 placeholder:text-base-400 focus:outline-none focus:ring-2 focus:ring-accent-500;
