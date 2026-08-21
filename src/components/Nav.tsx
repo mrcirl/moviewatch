@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import Logo from './Logo';
 
 const links = [
   { href: '/', label: 'Watchlist' },
@@ -26,7 +27,9 @@ export default function Nav() {
     <header className="sticky top-0 z-10 border-b border-base-800 bg-base-950/90 backdrop-blur">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
         <div className="flex items-center gap-6">
-          <span className="text-lg font-semibold text-base-200">🎬 MovieWatch</span>
+          <Link href="/" aria-label="MovieWatch home">
+            <Logo size={26} />
+          </Link>
           <nav className="flex items-center gap-1">
             {links.map((link) => {
               const active = link.href === '/' ? pathname === '/' : pathname.startsWith(link.href);

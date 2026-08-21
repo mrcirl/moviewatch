@@ -18,6 +18,15 @@ const config: Config = {
           500: '#6c5ce7',
           400: '#8579ec',
         },
+        brand: {
+          violet: '#7c4dff',
+          magenta: '#ff3d81',
+          orange: '#ff8a3d',
+          cyan: '#37e6e6',
+        },
+      },
+      fontFamily: {
+        display: ['var(--font-display)', 'system-ui', 'sans-serif'],
       },
     },
   },
