@@ -137,9 +137,28 @@ export default function BrowseClient({
       {filtered.length === 0 ? (
         <p className="text-sm text-base-400">No films match those filters.</p>
       ) : (
-        <div className="flex items-start gap-3">
-          <div className="min-w-0 flex-1 space-y-6">
-            {LETTERS.filter((letter) => groups.has(letter)).map((letter) => (
+        <>
+          <div className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 sm:hidden" aria-label="Jump to letter">
+            {LETTERS.map((letter) => {
+              const has = groups.has(letter);
+              return (
+                <button
+                  key={letter}
+                  type="button"
+                  disabled={!has}
+                  onClick={() => scrollToLetter(letter)}
+                  className={`flex-shrink-0 rounded px-2 py-1 text-xs font-semibold ${
+                    has ? 'bg-base-900 text-accent-400' : 'text-base-800'
+                  }`}
+                >
+                  {letter}
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="min-w-0 flex-1 space-y-6">
+              {LETTERS.filter((letter) => groups.has(letter)).map((letter) => (
               <section key={letter} id={`letter-${letter}`} className="scroll-mt-20 space-y-2">
                 <h2 className="text-sm font-semibold text-base-400">{letter}</h2>
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
@@ -202,7 +221,8 @@ export default function BrowseClient({
               );
             })}
           </nav>
-        </div>
+          </div>
+        </>
       )}
     </div>
   );
