@@ -104,3 +104,60 @@ export async function getWatchProviders(tmdbId: number) {
     buy: forRegion?.buy ?? [],
   };
 }
+
+export interface TmdbGenre {
+  id: number;
+  name: string;
+}
+
+// TMDB's genre list is effectively static; a long cache avoids re-fetching
+// it on every /recommended page view.
+const GENRES_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+let genresCache: { genres: TmdbGenre[]; expires: number } | null = null;
+
+export async function getGenres(): Promise<TmdbGenre[]> {
+  if (genresCache && genresCache.expires > Date.now()) return genresCache.genres;
+  const data = await tmdbFetch<{ genres: TmdbGenre[] }>('/genre/movie/list');
+  genresCache = { genres: data.genres, expires: Date.now() + GENRES_CACHE_TTL_MS };
+  return data.genres;
+}
+
+export interface TmdbDiscoverResult {
+  id: number;
+  title: string;
+  release_date?: string;
+  poster_path: string | null;
+  vote_average: number;
+}
+
+// "Top of the 1990s" doesn't change day to day, so cache each genre/decade
+// combination for a while — the /recommended page fires one Discover call
+// per genre, and this keeps repeat visits (and re-toggling decade tabs) from
+// re-hitting TMDB every time.
+const DISCOVER_CACHE_TTL_MS = 60 * 60 * 1000;
+const discoverCache = new Map<string, { results: TmdbDiscoverResult[]; expires: number }>();
+
+/** Top-rated movies (by TMDB rating, with a minimum vote count to filter out obscure outliers) for a genre, optionally within a year range. */
+export async function discoverTopMovies(params: {
+  genreId: number;
+  yearFrom?: number;
+  yearTo?: number;
+}): Promise<TmdbDiscoverResult[]> {
+  const key = `${params.genreId}:${params.yearFrom ?? ''}:${params.yearTo ?? ''}`;
+  const cached = discoverCache.get(key);
+  if (cached && cached.expires > Date.now()) return cached.results;
+
+  const query: Record<string, string> = {
+    with_genres: String(params.genreId),
+    sort_by: 'vote_average.desc',
+    'vote_count.gte': '200',
+    include_adult: 'false',
+    include_video: 'false',
+  };
+  if (params.yearFrom) query['primary_release_date.gte'] = `${params.yearFrom}-01-01`;
+  if (params.yearTo) query['primary_release_date.lte'] = `${params.yearTo}-12-31`;
+
+  const data = await tmdbFetch<{ results: TmdbDiscoverResult[] }>('/discover/movie', query);
+  discoverCache.set(key, { results: data.results, expires: Date.now() + DISCOVER_CACHE_TTL_MS });
+  return data.results;
+}
