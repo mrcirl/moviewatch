@@ -1,11 +1,17 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import type { PersonDTO, WatchlistItemDTO } from '@/lib/types';
 import TagPicker from '@/components/TagPicker';
 
 const LETTERS = ['#', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')];
+
+// Give a beat after the last person is tagged before committing (so picking
+// two or three people doesn't yank the card away after the first click),
+// then another beat after it's confirmed before it actually leaves the grid.
+const TAG_COMMIT_DELAY_MS = 900;
+const LEAVE_DELAY_MS = 600;
 
 function letterOf(title: string): string {
   const raw = title.trim().charAt(0).toUpperCase();
@@ -22,6 +28,20 @@ export default function BrowseClient({
   const [items, setItems] = useState(initialItems);
   const [genreFilter, setGenreFilter] = useState<string>('ALL');
   const [ratingFilter, setRatingFilter] = useState<string>('ALL');
+  const [pending, setPending] = useState<Map<number, number[]>>(new Map());
+  const [leaving, setLeaving] = useState<Set<number>>(new Set());
+  const pendingRef = useRef<Map<number, number[]>>(new Map());
+  const commitTimers = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+  const leaveTimers = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+
+  useEffect(() => {
+    const commits = commitTimers.current;
+    const leaves = leaveTimers.current;
+    return () => {
+      commits.forEach(clearTimeout);
+      leaves.forEach(clearTimeout);
+    };
+  }, []);
 
   const genres = useMemo(() => {
     const set = new Set<string>();
@@ -82,7 +102,27 @@ export default function BrowseClient({
     document.getElementById(`letter-${letter}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  async function tagPerson(id: number, personIds: number[]) {
+  function togglePerson(id: number, personId: number) {
+    const current = pendingRef.current.get(id) ?? [];
+    const next = current.includes(personId) ? current.filter((p) => p !== personId) : [...current, personId];
+    const map = new Map(pendingRef.current);
+    map.set(id, next);
+    pendingRef.current = map;
+    setPending(map);
+
+    const existing = commitTimers.current.get(id);
+    if (existing) clearTimeout(existing);
+    commitTimers.current.set(
+      id,
+      setTimeout(() => commitTagging(id), TAG_COMMIT_DELAY_MS),
+    );
+  }
+
+  async function commitTagging(id: number) {
+    commitTimers.current.delete(id);
+    const personIds = pendingRef.current.get(id) ?? [];
+    if (personIds.length === 0) return;
+
     const res = await fetch(`/api/watchlist/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -90,9 +130,18 @@ export default function BrowseClient({
     });
     if (!res.ok) return;
     const { item } = await res.json();
-    // Tagging with anyone graduates it onto the main watchlist, so it drops out of here.
+
+    // Tagging with anyone graduates it onto the main watchlist — fade it out
+    // before it actually drops out of here, rather than yanking it away.
     if (item.people.length > 0) {
-      setItems((prev) => prev.filter((i) => i.id !== id));
+      setLeaving((prev) => new Set(prev).add(id));
+      leaveTimers.current.set(
+        id,
+        setTimeout(() => {
+          leaveTimers.current.delete(id);
+          setItems((prev) => prev.filter((i) => i.id !== id));
+        }, LEAVE_DELAY_MS),
+      );
     } else {
       setItems((prev) => prev.map((i) => (i.id === id ? item : i)));
     }
@@ -100,6 +149,12 @@ export default function BrowseClient({
 
   async function discard(id: number) {
     if (!confirm('Discard this film? It will be removed entirely — you can re-import it later.')) return;
+    const commitTimer = commitTimers.current.get(id);
+    if (commitTimer) clearTimeout(commitTimer);
+    commitTimers.current.delete(id);
+    const leaveTimer = leaveTimers.current.get(id);
+    if (leaveTimer) clearTimeout(leaveTimer);
+    leaveTimers.current.delete(id);
     setItems((prev) => prev.filter((i) => i.id !== id));
     await fetch(`/api/watchlist/${id}`, { method: 'DELETE' });
   }
@@ -163,7 +218,12 @@ export default function BrowseClient({
                 <h2 className="text-sm font-semibold text-base-400">{letter}</h2>
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                   {groups.get(letter)!.map((item) => (
-                    <div key={item.id} className="card space-y-2 p-3">
+                    <div
+                      key={item.id}
+                      className={`card space-y-2 p-3 transition-opacity duration-500 ${
+                        leaving.has(item.id) ? 'pointer-events-none opacity-0' : 'opacity-100'
+                      }`}
+                    >
                       <div className="relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-base-800">
                         {item.movie.posterPath ? (
                           <Image
@@ -189,8 +249,8 @@ export default function BrowseClient({
                       </div>
                       <TagPicker
                         options={people}
-                        selectedIds={[]}
-                        onToggle={(personId) => tagPerson(item.id, [personId])}
+                        selectedIds={pending.get(item.id) ?? []}
+                        onToggle={(personId) => togglePerson(item.id, personId)}
                         emptyHint="Add people on the People page."
                       />
                       <button onClick={() => discard(item.id)} className="btn-danger w-full text-xs">
