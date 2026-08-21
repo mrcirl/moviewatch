@@ -1,0 +1,32 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sun" x1="6" y1="8" x2="26" y2="24" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff8a3d" />
+      <stop offset="0.55" stop-color="#ff3d81" />
+      <stop offset="1" stop-color="#7c4dff" />
+    </linearGradient>
+    <linearGradient id="grid" x1="0" y1="18" x2="32" y2="28" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#37e6e6" />
+      <stop offset="1" stop-color="#7c4dff" />
+    </linearGradient>
+    <clipPath id="clip">
+      <rect x="4" y="6" width="24" height="12" />
+    </clipPath>
+  </defs>
+  <rect x="0.75" y="0.75" width="30.5" height="30.5" rx="8" fill="#0b0d12" stroke="#242b38" stroke-width="1.5" />
+  <g clip-path="url(#clip)">
+    <circle cx="16" cy="17" r="9" fill="url(#sun)" />
+    <rect x="4" y="12.1" width="24" height="1.5" fill="#0b0d12" />
+    <rect x="4" y="15.3" width="24" height="1.5" fill="#0b0d12" />
+  </g>
+  <line x1="3" y1="18" x2="29" y2="18" stroke="url(#grid)" stroke-width="1.6" stroke-linecap="round" />
+  <g stroke="url(#grid)" stroke-width="1" opacity="0.85">
+    <line x1="16" y1="18" x2="6" y2="27" />
+    <line x1="16" y1="18" x2="11" y2="27" />
+    <line x1="16" y1="18" x2="16" y2="27" />
+    <line x1="16" y1="18" x2="21" y2="27" />
+    <line x1="16" y1="18" x2="26" y2="27" />
+    <line x1="8.3" y1="21.5" x2="23.7" y2="21.5" />
+    <line x1="6.8" y1="24.3" x2="25.2" y2="24.3" />
+  </g>
+</svg>
