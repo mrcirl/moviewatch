@@ -18,6 +18,7 @@ model Movie {
   releaseDate String?
   certification String?
   trailerKey  String?
+  genres      String?
   createdAt   DateTime @default(now())
 
   watchlistItems WatchlistItem[]
@@ -30,6 +31,7 @@ model WatchlistItem {
   status    String    @default("WANT_TO_WATCH")
   notes     String?
   rating    Int?
+  imported  Boolean   @default(false)
   addedAt   DateTime  @default(now())
   watchedAt DateTime?
 

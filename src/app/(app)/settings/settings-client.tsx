@@ -192,7 +192,11 @@ function JellyfinSyncPanel({ configured }: { configured: boolean }) {
   }
 
   async function importLibrary() {
-    if (!confirm('Add every movie in your Jellyfin library that isn\'t already on your watchlist, as a new "want to watch" entry?')) {
+    if (
+      !confirm(
+        'Pull in your whole Jellyfin library? New films land on the Browse available page until you tag who\'s watching.',
+      )
+    ) {
       return;
     }
     setImporting(true);
@@ -207,7 +211,7 @@ function JellyfinSyncPanel({ configured }: { configured: boolean }) {
     }
     const failedNote = data.failed > 0 ? `, ${data.failed} failed` : '';
     setMessage(
-      `Imported ${data.imported} new film${data.imported === 1 ? '' : 's'} ` +
+      `Imported ${data.imported} new film${data.imported === 1 ? '' : 's'} to Browse available ` +
         `(${data.alreadyOnWatchlist} already on your watchlist${failedNote}).`,
     );
   }
@@ -218,7 +222,7 @@ function JellyfinSyncPanel({ configured }: { configured: boolean }) {
         <h2 className="font-medium text-base-200">Resync from Jellyfin</h2>
         <p className="text-xs text-base-400">
           {configured
-            ? 'Availability checks are cached for a minute at a time — refresh to pick up new Jellyfin content immediately, or pull your whole library into the watchlist.'
+            ? 'Availability checks are cached for a minute at a time — refresh to pick up new Jellyfin content immediately, or pull your whole library into Browse available.'
             : 'Add a Jellyfin server URL and API key above, then save, to enable this.'}
         </p>
       </div>
@@ -257,7 +261,11 @@ function PlexSyncPanel({ configured }: { configured: boolean }) {
   }
 
   async function importLibrary() {
-    if (!confirm('Add every movie in your Plex library that isn\'t already on your watchlist, as a new "want to watch" entry?')) {
+    if (
+      !confirm(
+        'Pull in your whole Plex library? New films land on the Browse available page until you tag who\'s watching.',
+      )
+    ) {
       return;
     }
     setImporting(true);
@@ -272,7 +280,7 @@ function PlexSyncPanel({ configured }: { configured: boolean }) {
     }
     const failedNote = data.failed > 0 ? `, ${data.failed} failed` : '';
     setMessage(
-      `Imported ${data.imported} new film${data.imported === 1 ? '' : 's'} ` +
+      `Imported ${data.imported} new film${data.imported === 1 ? '' : 's'} to Browse available ` +
         `(${data.alreadyOnWatchlist} already on your watchlist${failedNote}).`,
     );
   }
@@ -283,7 +291,7 @@ function PlexSyncPanel({ configured }: { configured: boolean }) {
         <h2 className="font-medium text-base-200">Resync from Plex</h2>
         <p className="text-xs text-base-400">
           {configured
-            ? 'Availability checks are cached for a minute at a time — refresh to pick up new Plex content immediately, or pull your whole library into the watchlist.'
+            ? 'Availability checks are cached for a minute at a time — refresh to pick up new Plex content immediately, or pull your whole library into Browse available.'
             : 'Add a Plex server URL and token above, then save, to enable this.'}
         </p>
       </div>

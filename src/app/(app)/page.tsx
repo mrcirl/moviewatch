@@ -1,10 +1,12 @@
 import { prisma } from '@/lib/db';
 import { serializeWatchlistItem, serializePerson, serializePlace } from '@/lib/serialize';
+import { mainWatchlistWhere } from '@/lib/watchlist';
 import DashboardClient from './dashboard-client';
 
 export default async function DashboardPage() {
   const [items, people, places] = await Promise.all([
     prisma.watchlistItem.findMany({
+      where: mainWatchlistWhere,
       include: {
         movie: true,
         people: { include: { person: true } },

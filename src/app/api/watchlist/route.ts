@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireApiAuth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { getMovieDetails, extractCertification, extractTrailerKey, TmdbNotConfiguredError } from '@/lib/tmdb';
+import { getMovieDetails, extractCertification, extractTrailerKey, extractGenreNames, TmdbNotConfiguredError } from '@/lib/tmdb';
 import { serializeWatchlistItem } from '@/lib/serialize';
 import { getSettings } from '@/lib/settings';
+import { mainWatchlistWhere } from '@/lib/watchlist';
 
 const watchlistInclude = {
   movie: true,
@@ -16,6 +17,7 @@ export async function GET() {
   if (unauthorized) return unauthorized;
 
   const items = await prisma.watchlistItem.findMany({
+    where: mainWatchlistWhere,
     include: watchlistInclude,
     orderBy: [{ status: 'asc' }, { addedAt: 'desc' }],
   });
@@ -46,6 +48,7 @@ export async function POST(req: NextRequest) {
           releaseDate: details.release_date,
           certification: extractCertification(details, settings.tmdbRegion || 'US'),
           trailerKey: extractTrailerKey(details),
+          genres: extractGenreNames(details).join(','),
         },
       });
     } catch (err) {

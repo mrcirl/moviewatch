@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { requireApiAuth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { getJellyfinMovieIndex } from '@/lib/jellyfin';
-import { getMovieDetails, extractCertification, extractTrailerKey, TmdbNotConfiguredError } from '@/lib/tmdb';
+import { getMovieDetails, extractCertification, extractTrailerKey, extractGenreNames, TmdbNotConfiguredError } from '@/lib/tmdb';
 import { getSettings } from '@/lib/settings';
 
 const CONCURRENCY = 5;
@@ -70,13 +70,14 @@ export async function POST() {
             releaseDate: details.release_date,
             certification: extractCertification(details, region),
             trailerKey: extractTrailerKey(details),
+            genres: extractGenreNames(details).join(','),
           },
         });
       }
       await prisma.watchlistItem.upsert({
         where: { movieId: movie.id },
         update: {},
-        create: { movieId: movie.id },
+        create: { movieId: movie.id, imported: true },
       });
       imported++;
     } catch (err) {

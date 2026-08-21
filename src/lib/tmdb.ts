@@ -52,6 +52,7 @@ export interface TmdbMovieDetails {
   poster_path: string | null;
   overview: string;
   runtime: number | null;
+  genres?: { id: number; name: string }[];
   'watch/providers'?: {
     results?: Record<
       string,
@@ -110,6 +111,11 @@ export function extractTrailerKey(details: TmdbMovieDetails): string | null {
 
 export function trailerUrl(key: string | null | undefined): string | null {
   return key ? `https://www.youtube.com/watch?v=${key}` : null;
+}
+
+/** Genre names (e.g. ["Action", "Comedy"]) from a movie details response. */
+export function extractGenreNames(details: TmdbMovieDetails): string[] {
+  return (details.genres ?? []).map((g) => g.name);
 }
 
 /** Watch-provider availability for the configured region (defaults to US). */
