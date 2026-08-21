@@ -55,6 +55,7 @@ model WatchlistItemPerson {
   watchlistItemId Int
   person          Person        @relation(fields: [personId], references: [id], onDelete: Cascade)
   personId        Int
+  watched         Boolean       @default(false)
 
   @@id([watchlistItemId, personId])
 }

@@ -62,7 +62,7 @@ export default function PeopleClient({ initialPeople }: { initialPeople: PersonW
           + Add person
         </button>
       </form>
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
 
       <div className="space-y-3">
         {people.map((p) => (
@@ -74,7 +74,7 @@ export default function PeopleClient({ initialPeople }: { initialPeople: PersonW
               </div>
               <button
                 onClick={() => removePerson(p.id)}
-                className="text-xs text-base-400 hover:text-red-400"
+                className="text-xs text-base-400 hover:text-danger"
                 aria-label={`Remove ${p.name}`}
               >
                 Remove
@@ -89,11 +89,11 @@ export default function PeopleClient({ initialPeople }: { initialPeople: PersonW
                   <span
                     key={f.watchlistItemId}
                     className={`badge border border-base-700 text-xs ${
-                      f.status === 'WATCHED' ? 'text-base-500 line-through' : 'text-base-300'
+                      f.watched ? 'text-base-500 line-through' : 'text-base-300'
                     }`}
-                    title={f.status === 'WATCHED' ? 'Watched' : 'Want to watch'}
+                    title={f.watched ? 'Watched by them' : 'Not watched by them yet'}
                   >
-                    {f.status === 'WATCHED' && '✓ '}
+                    {f.watched && '✓ '}
                     {f.movie.title}
                     {f.movie.year && ` (${f.movie.year})`}
                   </span>

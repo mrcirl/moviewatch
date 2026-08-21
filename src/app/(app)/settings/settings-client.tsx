@@ -166,6 +166,12 @@ export default function SettingsClient({ initialSettings }: { initialSettings: S
         configured={Boolean(initialSettings.jellyfinUrl.trim() && initialSettings.jellyfinApiKey.trim())}
       />
       <PlexSyncPanel configured={Boolean(initialSettings.plexUrl.trim() && initialSettings.plexToken.trim())} />
+      <PlaylistSyncPanel
+        configured={Boolean(
+          (initialSettings.plexUrl.trim() && initialSettings.plexToken.trim()) ||
+            (initialSettings.jellyfinUrl.trim() && initialSettings.jellyfinApiKey.trim()),
+        )}
+      />
       <PasswordForm />
     </div>
   );
@@ -234,7 +240,7 @@ function JellyfinSyncPanel({ configured }: { configured: boolean }) {
           {importing ? 'Importing…' : 'Import library into watchlist'}
         </button>
       </div>
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
       {message && <p className="text-sm text-base-400">{message}</p>}
     </div>
   );
@@ -303,8 +309,79 @@ function PlexSyncPanel({ configured }: { configured: boolean }) {
           {importing ? 'Importing…' : 'Import library into watchlist'}
         </button>
       </div>
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
       {message && <p className="text-sm text-base-400">{message}</p>}
+    </div>
+  );
+}
+
+interface PlaylistSyncOutcome {
+  ok: boolean;
+  itemCount?: number;
+  error?: string;
+}
+
+interface PlaylistSyncPersonResult {
+  person: string;
+  filmCount: number;
+  plex: PlaylistSyncOutcome | null;
+  jellyfin: PlaylistSyncOutcome | null;
+}
+
+function PlaylistSyncPanel({ configured }: { configured: boolean }) {
+  const [syncing, setSyncing] = useState(false);
+  const [results, setResults] = useState<PlaylistSyncPersonResult[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function sync() {
+    setSyncing(true);
+    setError(null);
+    setResults(null);
+    const res = await fetch('/api/playlists/sync', { method: 'POST' });
+    const data = await res.json().catch(() => ({}));
+    setSyncing(false);
+    if (!res.ok) {
+      setError(data.error ?? 'Could not sync playlists.');
+      return;
+    }
+    setResults(data.results);
+  }
+
+  function outcomeLabel(outcome: PlaylistSyncOutcome | null): string | null {
+    if (!outcome) return null;
+    if (!outcome.ok) return outcome.error ?? 'Failed';
+    return `${outcome.itemCount} film${outcome.itemCount === 1 ? '' : 's'}`;
+  }
+
+  return (
+    <div className="card space-y-4 p-5">
+      <div>
+        <h2 className="font-medium text-base-200">Sync playlists</h2>
+        <p className="text-xs text-base-400">
+          {configured
+            ? 'Creates or replaces one "want to watch" playlist per person — named "MovieWatch: <name>" — on whichever of Plex/Jellyfin is configured above.'
+            : 'Configure Plex or Jellyfin above, then save, to enable this.'}
+        </p>
+      </div>
+      <button type="button" className="btn-secondary" onClick={sync} disabled={!configured || syncing}>
+        {syncing ? 'Syncing…' : 'Sync playlists now'}
+      </button>
+      {error && <p className="text-sm text-danger">{error}</p>}
+      {results && (
+        <ul className="space-y-1 text-sm">
+          {results.map((r) => (
+            <li key={r.person} className="flex flex-wrap items-center gap-x-2 text-base-300">
+              <span className="font-medium text-base-200">{r.person}</span>
+              <span className="text-xs text-base-500">({r.filmCount} tagged)</span>
+              {r.plex && <span className={r.plex.ok ? 'text-emerald-400' : 'text-danger'}>Plex: {outcomeLabel(r.plex)}</span>}
+              {r.jellyfin && (
+                <span className={r.jellyfin.ok ? 'text-emerald-400' : 'text-danger'}>Jellyfin: {outcomeLabel(r.jellyfin)}</span>
+              )}
+            </li>
+          ))}
+          {results.length === 0 && <li className="text-base-400">Add people on the People page first.</li>}
+        </ul>
+      )}
     </div>
   );
 }
@@ -352,7 +429,7 @@ function PasswordForm() {
         value={newPassword}
         onChange={(e) => setNewPassword(e.target.value)}
       />
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
       <div className="flex items-center gap-3">
         <button type="submit" className="btn-secondary" disabled={saving}>
           {saving ? 'Saving…' : 'Change password'}

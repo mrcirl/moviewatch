@@ -80,7 +80,7 @@ export default async function RecommendedPage({
         ))}
       </div>
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
       {!error && rows.length === 0 && (
         <p className="text-sm text-base-400">Nothing to show for this decade — try a different one.</p>
       )}

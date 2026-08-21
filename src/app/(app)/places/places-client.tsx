@@ -49,7 +49,7 @@ export default function PlacesClient({ initialPlaces }: { initialPlaces: PlaceDT
           + Add place
         </button>
       </form>
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
 
       <div className="space-y-2">
         {places.map((p) => (

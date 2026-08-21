@@ -60,7 +60,7 @@ export default function SetupForm() {
           required
         />
       </div>
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
       <button type="submit" className="btn-primary w-full" disabled={loading}>
         {loading ? 'Setting up…' : 'Create password'}
       </button>

@@ -67,7 +67,7 @@ export default function SearchClient() {
         autoFocus
       />
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
       {loading && <p className="text-sm text-base-400">Searching…</p>}
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
