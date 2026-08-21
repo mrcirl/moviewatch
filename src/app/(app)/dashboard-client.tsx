@@ -8,6 +8,28 @@ import WatchlistCard from '@/components/WatchlistCard';
 
 type StatusFilter = 'ALL' | 'WANT_TO_WATCH' | 'WATCHED';
 
+function csvCell(value: unknown): string {
+  const s = String(value ?? '');
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function toCsv(items: WatchlistItemDTO[]): string {
+  const header = ['Title', 'Year', 'Status', 'Certification', 'Rating', 'People', 'Places', 'Notes', 'Added', 'Watched'];
+  const rows = items.map((item) => [
+    item.movie.title,
+    item.movie.year ?? '',
+    item.status === 'WATCHED' ? 'Watched' : 'Want to watch',
+    item.movie.certification ?? '',
+    item.rating ?? '',
+    item.people.map((p) => p.person.name).join('; '),
+    item.places.map((p) => p.place.name).join('; '),
+    item.notes ?? '',
+    new Date(item.addedAt).toLocaleDateString(),
+    item.watchedAt ? new Date(item.watchedAt).toLocaleDateString() : '',
+  ]);
+  return [header, ...rows].map((row) => row.map(csvCell).join(',')).join('\n');
+}
+
 export default function DashboardClient({
   initialItems,
   people,
@@ -70,6 +92,17 @@ export default function DashboardClient({
 
   const pickedItem = pickId !== null ? (items.find((i) => i.id === pickId) ?? null) : null;
 
+  function exportCsv() {
+    const csv = toCsv(filtered);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `moviewatch-watchlist-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -101,6 +134,14 @@ export default function DashboardClient({
             title={pickPool.length === 0 ? 'Nothing in "want to watch" matches your filters' : undefined}
           >
             🎲 What should we watch?
+          </button>
+          <button
+            onClick={exportCsv}
+            disabled={filtered.length === 0}
+            className="btn-secondary"
+            title={filtered.length === 0 ? 'Nothing matches your filters to export' : 'Export what\'s currently shown as CSV'}
+          >
+            ⬇ Export CSV
           </button>
           <Link href="/search" className="btn-primary">
             + Add a film
