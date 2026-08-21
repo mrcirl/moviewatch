@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireApiAuth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { getJellyfinMovieIndex } from '@/lib/jellyfin';
+import { getPlexMovieIndex } from '@/lib/plex';
 import { getMovieDetails, extractCertification, extractTrailerKey, extractGenreNames, TmdbNotConfiguredError } from '@/lib/tmdb';
 import { getSettings } from '@/lib/settings';
 
@@ -19,8 +19,8 @@ async function mapWithConcurrency<T>(items: T[], limit: number, fn: (item: T) =>
 }
 
 /**
- * Adds every Jellyfin library movie (matched via TMDB provider id) that isn't
- * already on the watchlist, as a new "want to watch" entry.
+ * Adds every Plex library movie (matched via TMDB id) that isn't already on
+ * the watchlist, as a new "want to watch" entry.
  */
 export async function POST() {
   const unauthorized = await requireApiAuth();
@@ -33,13 +33,13 @@ export async function POST() {
 
   let index;
   try {
-    index = await getJellyfinMovieIndex({ force: true });
+    index = await getPlexMovieIndex({ force: true });
   } catch (err) {
     return NextResponse.json({ error: (err as Error).message }, { status: 502 });
   }
   if (!index) {
     return NextResponse.json(
-      { error: 'Jellyfin is not configured. Add a server URL and API key in Settings.' },
+      { error: 'Plex is not configured. Add a server URL and token in Settings.' },
       { status: 412 },
     );
   }
@@ -47,8 +47,8 @@ export async function POST() {
   const existing = await prisma.watchlistItem.findMany({ include: { movie: true } });
   const existingTmdbIds = new Set(existing.map((item) => item.movie.tmdbId));
 
-  const jellyfinTmdbIds = [...index.keys()];
-  const toImport = jellyfinTmdbIds.filter((id) => !existingTmdbIds.has(id));
+  const plexTmdbIds = [...index.keys()];
+  const toImport = plexTmdbIds.filter((id) => !existingTmdbIds.has(id));
   const region = settings.tmdbRegion || 'US';
 
   let imported = 0;
@@ -87,8 +87,8 @@ export async function POST() {
   });
 
   return NextResponse.json({
-    consideredFromJellyfin: jellyfinTmdbIds.length,
-    alreadyOnWatchlist: jellyfinTmdbIds.length - toImport.length,
+    consideredFromPlex: plexTmdbIds.length,
+    alreadyOnWatchlist: plexTmdbIds.length - toImport.length,
     imported,
     failed: failures.length,
     failures: failures.slice(0, 20),

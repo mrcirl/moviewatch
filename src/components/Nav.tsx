@@ -8,6 +8,7 @@ const links = [
   { href: '/', label: 'Watchlist' },
   { href: '/search', label: 'Search' },
   { href: '/recommended', label: 'Recommended' },
+  { href: '/browse', label: 'Browse available' },
   { href: '/people', label: 'People' },
   { href: '/places', label: 'Places' },
   { href: '/settings', label: 'Settings' },

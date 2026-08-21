@@ -14,6 +14,7 @@ export function serializeMovie(movie: Movie): MovieDTO {
     releaseDate: movie.releaseDate,
     certification: movie.certification,
     trailerUrl: trailerUrl(movie.trailerKey),
+    genres: movie.genres ? movie.genres.split(',').filter(Boolean) : [],
   };
 }
 
