@@ -35,6 +35,7 @@ export function serializePersonWithFilms(person: PersonWithItems): PersonWithFil
     .map((i) => ({
       watchlistItemId: i.watchlistItem.id,
       status: i.watchlistItem.status as WatchlistItemDTO['status'],
+      watched: i.watched,
       movie: serializeMovie(i.watchlistItem.movie),
     }))
     .sort((a, b) => a.movie.title.localeCompare(b.movie.title));
@@ -56,7 +57,7 @@ export function serializeWatchlistItem(item: FullWatchlistItem): WatchlistItemDT
     addedAt: item.addedAt.toISOString(),
     watchedAt: item.watchedAt ? item.watchedAt.toISOString() : null,
     movie: serializeMovie(item.movie),
-    people: item.people.map((p) => ({ person: serializePerson(p.person) })),
+    people: item.people.map((p) => ({ person: serializePerson(p.person), watched: p.watched })),
     places: item.places.map((p) => ({ place: serializePlace(p.place) })),
   };
 }

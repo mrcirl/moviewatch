@@ -13,12 +13,14 @@ export default function WatchlistCard({
   places,
   onUpdate,
   onDelete,
+  onToggleWatchedBy,
 }: {
   item: WatchlistItemDTO;
   people: PersonDTO[];
   places: PlaceDTO[];
   onUpdate: (id: number, patch: Record<string, unknown>) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
+  onToggleWatchedBy: (itemId: number, personId: number, watched: boolean) => Promise<void>;
 }) {
   const [notes, setNotes] = useState(item.notes ?? '');
   const [savingNotes, setSavingNotes] = useState(false);
@@ -115,6 +117,30 @@ export default function WatchlistCard({
           <p className="text-xs font-medium uppercase tracking-wide text-base-400">Watch with</p>
           <TagPicker options={people} selectedIds={personIds} onToggle={togglePerson} emptyHint="Add people on the People page." />
         </div>
+
+        {item.people.length > 0 && (
+          <div className="space-y-1">
+            <p className="text-xs font-medium uppercase tracking-wide text-base-400">Watched by</p>
+            <div className="flex flex-wrap gap-1.5">
+              {item.people.map(({ person, watched: personWatched }) => (
+                <button
+                  key={person.id}
+                  type="button"
+                  onClick={() => onToggleWatchedBy(item.id, person.id, !personWatched)}
+                  className={`badge border transition-colors ${
+                    personWatched
+                      ? 'border-transparent bg-emerald-900 text-emerald-300'
+                      : 'border-base-700 bg-transparent text-base-400 hover:border-base-600 hover:text-base-200'
+                  }`}
+                  title={personWatched ? `${person.name} has watched this` : `Mark as watched by ${person.name}`}
+                >
+                  {personWatched && '✓ '}
+                  {person.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="space-y-1">
           <p className="text-xs font-medium uppercase tracking-wide text-base-400">Where</p>

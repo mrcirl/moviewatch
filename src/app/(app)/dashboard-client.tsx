@@ -57,6 +57,18 @@ export default function DashboardClient({
     }
   }
 
+  async function toggleWatchedBy(itemId: number, personId: number, watchedValue: boolean) {
+    const res = await fetch(`/api/watchlist/${itemId}/people/${personId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ watched: watchedValue }),
+    });
+    if (res.ok) {
+      const { item } = await res.json();
+      setItems((prev) => prev.map((i) => (i.id === itemId ? item : i)));
+    }
+  }
+
   async function deleteItem(id: number) {
     if (!confirm('Remove this from your watchlist?')) return;
     setItems((prev) => prev.filter((i) => i.id !== id));
@@ -226,7 +238,15 @@ export default function DashboardClient({
       ) : (
         <div className="space-y-4">
           {filtered.map((item) => (
-            <WatchlistCard key={item.id} item={item} people={people} places={places} onUpdate={updateItem} onDelete={deleteItem} />
+            <WatchlistCard
+              key={item.id}
+              item={item}
+              people={people}
+              places={places}
+              onUpdate={updateItem}
+              onDelete={deleteItem}
+              onToggleWatchedBy={toggleWatchedBy}
+            />
           ))}
         </div>
       )}

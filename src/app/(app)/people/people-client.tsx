@@ -89,11 +89,11 @@ export default function PeopleClient({ initialPeople }: { initialPeople: PersonW
                   <span
                     key={f.watchlistItemId}
                     className={`badge border border-base-700 text-xs ${
-                      f.status === 'WATCHED' ? 'text-base-500 line-through' : 'text-base-300'
+                      f.watched ? 'text-base-500 line-through' : 'text-base-300'
                     }`}
-                    title={f.status === 'WATCHED' ? 'Watched' : 'Want to watch'}
+                    title={f.watched ? 'Watched by them' : 'Not watched by them yet'}
                   >
-                    {f.status === 'WATCHED' && '✓ '}
+                    {f.watched && '✓ '}
                     {f.movie.title}
                     {f.movie.year && ` (${f.movie.year})`}
                   </span>

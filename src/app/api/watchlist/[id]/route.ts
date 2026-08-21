@@ -53,10 +53,22 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
 
     if (personIds) {
-      await tx.watchlistItemPerson.deleteMany({ where: { watchlistItemId: id } });
-      if (personIds.length > 0) {
+      // Add/remove only what changed, rather than deleting and recreating
+      // every row — that would also wipe each person's individual `watched`
+      // flag on every tag edit, even for people who weren't touched.
+      const current = await tx.watchlistItemPerson.findMany({ where: { watchlistItemId: id } });
+      const currentIds = new Set(current.map((p) => p.personId));
+      const nextIds = new Set(personIds);
+
+      const toRemove = [...currentIds].filter((personId) => !nextIds.has(personId));
+      const toAdd = [...nextIds].filter((personId) => !currentIds.has(personId));
+
+      if (toRemove.length > 0) {
+        await tx.watchlistItemPerson.deleteMany({ where: { watchlistItemId: id, personId: { in: toRemove } } });
+      }
+      if (toAdd.length > 0) {
         await tx.watchlistItemPerson.createMany({
-          data: personIds.map((personId) => ({ watchlistItemId: id, personId })),
+          data: toAdd.map((personId) => ({ watchlistItemId: id, personId })),
         });
       }
     }

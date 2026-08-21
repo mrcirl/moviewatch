@@ -32,10 +32,10 @@ export interface WatchlistItemDTO {
   addedAt: string;
   watchedAt: string | null;
   movie: MovieDTO;
-  people: { person: PersonDTO }[];
+  people: { person: PersonDTO; watched: boolean }[];
   places: { place: PlaceDTO }[];
 }
 
 export interface PersonWithFilmsDTO extends PersonDTO {
-  films: { watchlistItemId: number; status: WatchlistItemDTO['status']; movie: MovieDTO }[];
+  films: { watchlistItemId: number; status: WatchlistItemDTO['status']; watched: boolean; movie: MovieDTO }[];
 }
