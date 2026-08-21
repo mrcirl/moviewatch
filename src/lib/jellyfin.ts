@@ -78,3 +78,67 @@ export async function checkJellyfinAvailability(tmdbId: number): Promise<Jellyfi
     webUrl: `${base}/web/index.html#/details?id=${item.Id}`,
   };
 }
+
+export type PlaylistSyncResult = { ok: true; itemCount: number } | { ok: false; error: string };
+
+interface JellyfinUser {
+  Id: string;
+  Policy?: { IsAdministrator?: boolean };
+}
+
+/**
+ * A server-held API key isn't itself a user, but a Jellyfin playlist must be
+ * owned by one — use the first administrator account found (falling back to
+ * whatever user comes first) as the owner for playlists this app creates.
+ */
+async function fetchOwnerUserId(base: string, apiKey: string): Promise<string | null> {
+  const res = await fetch(`${base}/Users`, { headers: { 'X-Emby-Token': apiKey }, cache: 'no-store' });
+  if (!res.ok) return null;
+  const users = (await res.json()) as JellyfinUser[];
+  return users.find((u) => u.Policy?.IsAdministrator)?.Id ?? users[0]?.Id ?? null;
+}
+
+/**
+ * Creates or fully replaces a playlist titled "MovieWatch: {personName}"
+ * containing the given TMDB-id movies (matched against the Jellyfin library
+ * — ids with no match are silently skipped). Resyncing deletes any existing
+ * playlist of that name first and recreates it: Jellyfin's playlist-items
+ * endpoints reject pure API-key auth (they require a resolvable user
+ * session), but deleting/creating whole playlists works fine.
+ */
+export async function syncJellyfinPlaylist(personName: string, tmdbIds: number[]): Promise<PlaylistSyncResult> {
+  const settings = await getSettings();
+  if (!settings.jellyfinUrl || !settings.jellyfinApiKey) return { ok: false, error: 'Jellyfin is not configured.' };
+  const base = settings.jellyfinUrl.replace(/\/+$/, '');
+  const apiKey = settings.jellyfinApiKey;
+
+  const [index, userId] = await Promise.all([getJellyfinMovieIndex(), fetchOwnerUserId(base, apiKey)]);
+  if (!index) return { ok: false, error: 'Jellyfin is not configured.' };
+  if (!userId) return { ok: false, error: 'Could not find a Jellyfin user to own the playlist.' };
+
+  const title = `MovieWatch: ${personName}`;
+
+  const listRes = await fetch(
+    `${base}/Users/${userId}/Items?${new URLSearchParams({ IncludeItemTypes: 'Playlist', Recursive: 'true' })}`,
+    { headers: { 'X-Emby-Token': apiKey }, cache: 'no-store' },
+  );
+  if (listRes.ok) {
+    const data = (await listRes.json()) as { Items?: { Id: string; Name: string }[] };
+    const match = data.Items?.find((p) => p.Name === title);
+    if (match) {
+      await fetch(`${base}/Items/${match.Id}`, { method: 'DELETE', headers: { 'X-Emby-Token': apiKey } });
+    }
+  }
+
+  const itemIds = tmdbIds.map((id) => index.get(id)?.Id).filter((id): id is string => Boolean(id));
+  if (itemIds.length === 0) return { ok: true, itemCount: 0 };
+
+  const createRes = await fetch(`${base}/Playlists`, {
+    method: 'POST',
+    headers: { 'X-Emby-Token': apiKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ Name: title, Ids: itemIds, UserId: userId, MediaType: 'Video' }),
+  });
+  if (!createRes.ok) return { ok: false, error: `Jellyfin playlist creation failed (${createRes.status})` };
+
+  return { ok: true, itemCount: itemIds.length };
+}

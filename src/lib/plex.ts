@@ -21,19 +21,31 @@ interface PlexMetadataItem {
   Guid?: { id: string }[];
 }
 
-async function plexFetch<T>(base: string, token: string, path: string, params: Record<string, string> = {}): Promise<T> {
+// Some write endpoints (e.g. creating a playlist) expect a client identifier
+// even though reads don't enforce one; sending it everywhere is harmless.
+const PLEX_CLIENT_IDENTIFIER = 'moviewatch';
+
+async function plexFetch<T>(
+  base: string,
+  token: string,
+  path: string,
+  params: Record<string, string> = {},
+  opts: { method?: string } = {},
+): Promise<T> {
   const url = new URL(`${base}${path}`);
   url.searchParams.set('X-Plex-Token', token);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
 
   const res = await fetch(url.toString(), {
-    headers: { Accept: 'application/json' },
+    method: opts.method ?? 'GET',
+    headers: { Accept: 'application/json', 'X-Plex-Client-Identifier': PLEX_CLIENT_IDENTIFIER },
     cache: 'no-store',
   });
   if (!res.ok) {
     throw new Error(`Plex request failed (${res.status})`);
   }
-  return res.json() as Promise<T>;
+  const text = await res.text();
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 /** Pulls a TMDB id out of either the modern `Guid` array (`tmdb://123`) or a legacy single `guid` (`...themoviedb://123?...`). */
@@ -127,4 +139,47 @@ export async function checkPlexAvailability(tmdbId: number): Promise<PlexAvailab
     : undefined;
 
   return { available: true, ratingKey: item.ratingKey, webUrl };
+}
+
+export type PlaylistSyncResult = { ok: true; itemCount: number } | { ok: false; error: string };
+
+interface PlexPlaylistSummary {
+  ratingKey: string;
+  title: string;
+  playlistType?: string;
+}
+
+/**
+ * Creates or fully replaces a video playlist titled "MovieWatch: {personName}"
+ * containing the given TMDB-id movies (matched against the Plex library —
+ * ids with no match in Plex are silently skipped). Resyncing deletes any
+ * existing playlist of that name first and recreates it from scratch, since
+ * Plex has no clean "replace all items" endpoint.
+ */
+export async function syncPlexPlaylist(personName: string, tmdbIds: number[]): Promise<PlaylistSyncResult> {
+  const settings = await getSettings();
+  if (!settings.plexUrl || !settings.plexToken) return { ok: false, error: 'Plex is not configured.' };
+  const base = settings.plexUrl.replace(/\/+$/, '');
+  const token = settings.plexToken;
+
+  const index = await getPlexMovieIndex();
+  if (!index) return { ok: false, error: 'Plex is not configured.' };
+  const machineIdentifier = cache?.machineIdentifier;
+  if (!machineIdentifier) return { ok: false, error: "Could not determine the Plex server's identity." };
+
+  const title = `MovieWatch: ${personName}`;
+
+  const existing = await plexFetch<{ MediaContainer?: { Metadata?: PlexPlaylistSummary[] } }>(base, token, '/playlists');
+  const match = existing.MediaContainer?.Metadata?.find((p) => p.title === title && p.playlistType === 'video');
+  if (match) {
+    await plexFetch(base, token, `/playlists/${match.ratingKey}`, {}, { method: 'DELETE' });
+  }
+
+  const ratingKeys = tmdbIds.map((id) => index.get(id)?.ratingKey).filter((k): k is string => Boolean(k));
+  if (ratingKeys.length === 0) return { ok: true, itemCount: 0 };
+
+  const uri = `server://${machineIdentifier}/com.plexapp.plugins.library/library/metadata/${ratingKeys.join(',')}`;
+  await plexFetch(base, token, '/playlists', { type: 'video', title, smart: '0', uri }, { method: 'POST' });
+
+  return { ok: true, itemCount: ratingKeys.length };
 }
