@@ -8,6 +8,12 @@ interface JellyfinResult {
   error?: string;
 }
 
+interface PlexResult {
+  available?: boolean;
+  webUrl?: string;
+  error?: string;
+}
+
 interface SeerrResult {
   configured?: true;
   mediaInfo?: { status: number } | null;
@@ -32,6 +38,7 @@ interface StreamingResult {
 
 interface Availability {
   jellyfin: JellyfinResult | null;
+  plex: PlexResult | null;
   seerr: SeerrResult | null;
   streaming: StreamingResult;
 }
@@ -83,6 +90,7 @@ export default function AvailabilityPanel({ tmdbId }: { tmdbId: number }) {
   }
 
   const jellyfinAvailable = data.jellyfin?.available;
+  const plexAvailable = data.plex?.available;
   const seerrStatus = data.seerr?.mediaInfo?.status ?? null;
   const seerrAvailable = seerrStatus === 5;
   const alreadyRequested = seerrStatus === 2 || seerrStatus === 3 || seerrStatus === 4;
@@ -97,6 +105,15 @@ export default function AvailabilityPanel({ tmdbId }: { tmdbId: number }) {
       )}
       {!jellyfinAvailable && data.jellyfin && !data.jellyfin.error && (
         <span className="badge bg-base-800 text-base-400">Not in Jellyfin</span>
+      )}
+
+      {plexAvailable && (
+        <a href={data.plex?.webUrl} target="_blank" rel="noreferrer" className="badge bg-emerald-900 text-emerald-300">
+          ▶ In Plex
+        </a>
+      )}
+      {!plexAvailable && data.plex && !data.plex.error && (
+        <span className="badge bg-base-800 text-base-400">Not in Plex</span>
       )}
 
       {data.seerr && !data.seerr.error && seerrAvailable && (
@@ -117,8 +134,10 @@ export default function AvailabilityPanel({ tmdbId }: { tmdbId: number }) {
         </span>
       ))}
 
-      {!data.jellyfin && !data.seerr && providers.length === 0 && (
-        <span className="text-xs text-base-400">Configure Jellyfin, Seerr or a TMDB key in Settings to see availability.</span>
+      {!data.jellyfin && !data.plex && !data.seerr && providers.length === 0 && (
+        <span className="text-xs text-base-400">
+          Configure Jellyfin, Plex, Seerr or a TMDB key in Settings to see availability.
+        </span>
       )}
     </div>
   );

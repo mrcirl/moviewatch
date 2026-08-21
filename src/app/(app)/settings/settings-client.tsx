@@ -7,6 +7,8 @@ interface SettingsForm {
   tmdbRegion: string;
   jellyfinUrl: string;
   jellyfinApiKey: string;
+  plexUrl: string;
+  plexToken: string;
   seerrUrl: string;
   seerrApiKey: string;
   authBypassCidrs: string;
@@ -102,6 +104,23 @@ export default function SettingsClient({ initialSettings }: { initialSettings: S
         />
 
         <div className="border-t border-base-800 pt-5">
+          <h2 className="font-medium text-base-200">Plex</h2>
+          <p className="text-xs text-base-400">Same as Jellyfin, but for a Plex library.</p>
+        </div>
+        <Field
+          label="Server URL"
+          value={form.plexUrl}
+          onChange={(e) => set('plexUrl', e.target.value)}
+          placeholder="http://plex.example.com:32400"
+        />
+        <Field
+          label="Token"
+          hint="Your X-Plex-Token — see Plex's help article on finding an authentication token."
+          value={form.plexToken}
+          onChange={(e) => set('plexToken', e.target.value)}
+        />
+
+        <div className="border-t border-base-800 pt-5">
           <h2 className="font-medium text-base-200">Seerr</h2>
           <p className="text-xs text-base-400">Lets you request a film straight from your watchlist if it isn&apos;t available yet.</p>
         </div>
@@ -146,6 +165,7 @@ export default function SettingsClient({ initialSettings }: { initialSettings: S
       <JellyfinSyncPanel
         configured={Boolean(initialSettings.jellyfinUrl.trim() && initialSettings.jellyfinApiKey.trim())}
       />
+      <PlexSyncPanel configured={Boolean(initialSettings.plexUrl.trim() && initialSettings.plexToken.trim())} />
       <PasswordForm />
     </div>
   );
@@ -200,6 +220,71 @@ function JellyfinSyncPanel({ configured }: { configured: boolean }) {
           {configured
             ? 'Availability checks are cached for a minute at a time — refresh to pick up new Jellyfin content immediately, or pull your whole library into the watchlist.'
             : 'Add a Jellyfin server URL and API key above, then save, to enable this.'}
+        </p>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="button" className="btn-secondary" onClick={refresh} disabled={!configured || refreshing}>
+          {refreshing ? 'Refreshing…' : 'Refresh availability now'}
+        </button>
+        <button type="button" className="btn-secondary" onClick={importLibrary} disabled={!configured || importing}>
+          {importing ? 'Importing…' : 'Import library into watchlist'}
+        </button>
+      </div>
+      {error && <p className="text-sm text-red-400">{error}</p>}
+      {message && <p className="text-sm text-base-400">{message}</p>}
+    </div>
+  );
+}
+
+function PlexSyncPanel({ configured }: { configured: boolean }) {
+  const [refreshing, setRefreshing] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function refresh() {
+    setRefreshing(true);
+    setMessage(null);
+    setError(null);
+    const res = await fetch('/api/plex/refresh', { method: 'POST' });
+    const data = await res.json().catch(() => ({}));
+    setRefreshing(false);
+    if (!res.ok) {
+      setError(data.error ?? 'Could not refresh from Plex.');
+      return;
+    }
+    setMessage(`Refreshed — ${data.movieCount} movie${data.movieCount === 1 ? '' : 's'} in your Plex library.`);
+  }
+
+  async function importLibrary() {
+    if (!confirm('Add every movie in your Plex library that isn\'t already on your watchlist, as a new "want to watch" entry?')) {
+      return;
+    }
+    setImporting(true);
+    setMessage(null);
+    setError(null);
+    const res = await fetch('/api/plex/import', { method: 'POST' });
+    const data = await res.json().catch(() => ({}));
+    setImporting(false);
+    if (!res.ok) {
+      setError(data.error ?? 'Could not import from Plex.');
+      return;
+    }
+    const failedNote = data.failed > 0 ? `, ${data.failed} failed` : '';
+    setMessage(
+      `Imported ${data.imported} new film${data.imported === 1 ? '' : 's'} ` +
+        `(${data.alreadyOnWatchlist} already on your watchlist${failedNote}).`,
+    );
+  }
+
+  return (
+    <div className="card space-y-4 p-5">
+      <div>
+        <h2 className="font-medium text-base-200">Resync from Plex</h2>
+        <p className="text-xs text-base-400">
+          {configured
+            ? 'Availability checks are cached for a minute at a time — refresh to pick up new Plex content immediately, or pull your whole library into the watchlist.'
+            : 'Add a Plex server URL and token above, then save, to enable this.'}
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-3">

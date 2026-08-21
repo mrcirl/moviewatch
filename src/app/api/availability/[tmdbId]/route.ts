@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireApiAuth } from '@/lib/auth';
 import { checkJellyfinAvailability } from '@/lib/jellyfin';
+import { checkPlexAvailability } from '@/lib/plex';
 import { getSeerrStatus, MEDIA_STATUS_LABEL } from '@/lib/seerr';
 import { getWatchProviders } from '@/lib/tmdb';
 
@@ -15,14 +16,16 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const tmdbId = Number((await params).tmdbId);
   if (Number.isNaN(tmdbId)) return NextResponse.json({ error: 'Invalid tmdbId' }, { status: 400 });
 
-  const [jellyfin, seerr, streaming] = await Promise.allSettled([
+  const [jellyfin, plex, seerr, streaming] = await Promise.allSettled([
     checkJellyfinAvailability(tmdbId),
+    checkPlexAvailability(tmdbId),
     getSeerrStatus(tmdbId),
     getWatchProviders(tmdbId),
   ]);
 
   return NextResponse.json({
     jellyfin: jellyfin.status === 'fulfilled' ? jellyfin.value : { error: jellyfin.reason?.message },
+    plex: plex.status === 'fulfilled' ? plex.value : { error: plex.reason?.message },
     seerr:
       seerr.status === 'fulfilled'
         ? seerr.value && {
