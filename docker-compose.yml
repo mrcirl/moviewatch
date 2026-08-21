@@ -4,7 +4,7 @@ services:
     container_name: moviewatch
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "7000:7000"
     volumes:
       - moviewatch-data:/data
     environment:

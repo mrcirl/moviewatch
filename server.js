@@ -14,7 +14,7 @@ const { createServer } = require('node:http');
 const next = require('next');
 const { normalizeIp, isIpAllowlisted } = require('./lib/net');
 
-const port = parseInt(process.env.PORT || '3000', 10);
+const port = parseInt(process.env.PORT || '7000', 10);
 const trustedProxyCidrs = (process.env.TRUSTED_PROXY_CIDRS || '').trim();
 
 const app = next({ dev: false });

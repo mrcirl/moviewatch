@@ -26,7 +26,7 @@ RUN chmod +x docker-entrypoint.sh
 
 VOLUME ["/data"]
 ENV DATABASE_URL="file:/data/moviewatch.db"
-EXPOSE 3000
+EXPOSE 7000
 
 ENTRYPOINT ["./docker-entrypoint.sh"]
 CMD ["npm", "start"]

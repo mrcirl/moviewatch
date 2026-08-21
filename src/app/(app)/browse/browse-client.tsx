@@ -18,6 +18,10 @@ function letterOf(title: string): string {
   return /[A-Z]/.test(raw) ? raw : '#';
 }
 
+function decadeOf(year: number | null): string {
+  return year ? `${Math.floor(year / 10) * 10}s` : 'Unknown';
+}
+
 export default function BrowseClient({
   initialItems,
   people,
@@ -28,6 +32,7 @@ export default function BrowseClient({
   const [items, setItems] = useState(initialItems);
   const [genreFilter, setGenreFilter] = useState<string>('ALL');
   const [ratingFilter, setRatingFilter] = useState<string>('ALL');
+  const [decadeFilter, setDecadeFilter] = useState<string>('ALL');
   const [pending, setPending] = useState<Map<number, number[]>>(new Map());
   const [leaving, setLeaving] = useState<Set<number>>(new Set());
   const pendingRef = useRef<Map<number, number[]>>(new Map());
@@ -55,38 +60,62 @@ export default function BrowseClient({
     return [...set].sort();
   }, [items]);
 
+  const decades = useMemo(() => {
+    const set = new Set<string>();
+    for (const item of items) set.add(decadeOf(item.movie.year));
+    return [...set].sort();
+  }, [items]);
+
+  function passesGenre(item: WatchlistItemDTO) {
+    return genreFilter === 'ALL' || item.movie.genres.includes(genreFilter);
+  }
+  function passesRating(item: WatchlistItemDTO) {
+    return ratingFilter === 'ALL' || item.movie.certification === ratingFilter;
+  }
+  function passesDecade(item: WatchlistItemDTO) {
+    return decadeFilter === 'ALL' || decadeOf(item.movie.year) === decadeFilter;
+  }
+
   // Facet counts: how many items each option would leave you with, given the
-  // *other* filter's current value — so switching one filter updates the
-  // other's counts instead of always reflecting the unfiltered total.
+  // *other two* filters' current values — so changing one filter updates the
+  // others' counts instead of always reflecting the unfiltered total.
   const genreCounts = useMemo(() => {
     const counts = new Map<string, number>();
     let all = 0;
     for (const item of items) {
-      if (ratingFilter !== 'ALL' && item.movie.certification !== ratingFilter) continue;
+      if (!passesRating(item) || !passesDecade(item)) continue;
       all++;
       for (const g of item.movie.genres) counts.set(g, (counts.get(g) ?? 0) + 1);
     }
     return { counts, all };
-  }, [items, ratingFilter]);
+  }, [items, ratingFilter, decadeFilter]);
 
   const ratingCounts = useMemo(() => {
     const counts = new Map<string, number>();
     let all = 0;
     for (const item of items) {
-      if (genreFilter !== 'ALL' && !item.movie.genres.includes(genreFilter)) continue;
+      if (!passesGenre(item) || !passesDecade(item)) continue;
       all++;
       if (item.movie.certification) counts.set(item.movie.certification, (counts.get(item.movie.certification) ?? 0) + 1);
     }
     return { counts, all };
-  }, [items, genreFilter]);
+  }, [items, genreFilter, decadeFilter]);
+
+  const decadeCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    let all = 0;
+    for (const item of items) {
+      if (!passesGenre(item) || !passesRating(item)) continue;
+      all++;
+      const decade = decadeOf(item.movie.year);
+      counts.set(decade, (counts.get(decade) ?? 0) + 1);
+    }
+    return { counts, all };
+  }, [items, genreFilter, ratingFilter]);
 
   const filtered = useMemo(() => {
-    return items.filter((item) => {
-      if (genreFilter !== 'ALL' && !item.movie.genres.includes(genreFilter)) return false;
-      if (ratingFilter !== 'ALL' && item.movie.certification !== ratingFilter) return false;
-      return true;
-    });
-  }, [items, genreFilter, ratingFilter]);
+    return items.filter((item) => passesGenre(item) && passesRating(item) && passesDecade(item));
+  }, [items, genreFilter, ratingFilter, decadeFilter]);
 
   const groups = useMemo(() => {
     const map = new Map<string, WatchlistItemDTO[]>();
@@ -186,6 +215,14 @@ export default function BrowseClient({
           options={ratings}
           counts={ratingCounts.counts}
           allCount={ratingCounts.all}
+        />
+        <FilterGroup
+          label="Decade"
+          value={decadeFilter}
+          onChange={setDecadeFilter}
+          options={decades}
+          counts={decadeCounts.counts}
+          allCount={decadeCounts.all}
         />
       </div>
 
