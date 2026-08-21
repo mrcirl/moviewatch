@@ -69,6 +69,14 @@ export interface TmdbMovieDetails {
       release_dates: { certification: string; type: number }[];
     }[];
   };
+  videos?: {
+    results?: {
+      key: string;
+      site: string;
+      type: string;
+      official: boolean;
+    }[];
+  };
 }
 
 export async function searchMovies(query: string): Promise<TmdbSearchResult[]> {
@@ -81,7 +89,9 @@ export async function searchMovies(query: string): Promise<TmdbSearchResult[]> {
 }
 
 export async function getMovieDetails(tmdbId: number): Promise<TmdbMovieDetails> {
-  return tmdbFetch<TmdbMovieDetails>(`/movie/${tmdbId}`, { append_to_response: 'watch/providers,release_dates' });
+  return tmdbFetch<TmdbMovieDetails>(`/movie/${tmdbId}`, {
+    append_to_response: 'watch/providers,release_dates,videos',
+  });
 }
 
 /** Age/content rating (e.g. "PG-13") for the given region, or null if TMDB has none on file. */
@@ -89,6 +99,17 @@ export function extractCertification(details: TmdbMovieDetails, region: string):
   const forRegion = details.release_dates?.results?.find((r) => r.iso_3166_1 === region);
   const withCert = forRegion?.release_dates.find((r) => r.certification.trim() !== '');
   return withCert?.certification || null;
+}
+
+/** YouTube video key for the best trailer TMDB has on file (official over unofficial), or null. */
+export function extractTrailerKey(details: TmdbMovieDetails): string | null {
+  const videos = (details.videos?.results ?? []).filter((v) => v.site === 'YouTube' && v.type === 'Trailer');
+  const best = videos.find((v) => v.official) ?? videos[0];
+  return best?.key ?? null;
+}
+
+export function trailerUrl(key: string | null | undefined): string | null {
+  return key ? `https://www.youtube.com/watch?v=${key}` : null;
 }
 
 /** Watch-provider availability for the configured region (defaults to US). */

@@ -5,6 +5,7 @@ import Image from 'next/image';
 import type { PersonDTO, PlaceDTO, WatchlistItemDTO } from '@/lib/types';
 import TagPicker from './TagPicker';
 import AvailabilityPanel from './AvailabilityPanel';
+import StarRating from './StarRating';
 
 export default function WatchlistCard({
   item,
@@ -46,6 +47,10 @@ export default function WatchlistCard({
     await onUpdate(item.id, { placeIds: next });
   }
 
+  async function setRating(rating: number | null) {
+    await onUpdate(item.id, { rating });
+  }
+
   return (
     <div className="card flex gap-4 p-4">
       <div className="relative h-36 w-24 flex-shrink-0 overflow-hidden rounded-lg bg-base-800">
@@ -75,7 +80,24 @@ export default function WatchlistCard({
                 </span>
               )}
             </h3>
-            {item.movie.runtime && <p className="text-xs text-base-400">{item.movie.runtime} min</p>}
+            <div className="flex items-center gap-2">
+              {item.movie.runtime && <p className="text-xs text-base-400">{item.movie.runtime} min</p>}
+              {item.movie.trailerUrl && (
+                <a
+                  href={item.movie.trailerUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs text-accent-400 hover:underline"
+                >
+                  ▶ Trailer
+                </a>
+              )}
+            </div>
+            {watched && (
+              <div className="mt-1.5 flex items-center gap-1.5">
+                <StarRating value={item.rating} onChange={setRating} />
+              </div>
+            )}
           </div>
           <div className="flex flex-shrink-0 items-center gap-1.5">
             <button onClick={toggleWatched} className={watched ? 'btn-secondary text-xs' : 'btn-primary text-xs'}>

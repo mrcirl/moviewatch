@@ -8,6 +8,7 @@ export interface MovieDTO {
   runtime: number | null;
   releaseDate: string | null;
   certification: string | null;
+  trailerUrl: string | null;
 }
 
 export interface PersonDTO {
@@ -26,6 +27,7 @@ export interface WatchlistItemDTO {
   id: number;
   status: 'WANT_TO_WATCH' | 'WATCHED';
   notes: string | null;
+  rating: number | null;
   addedAt: string;
   watchedAt: string | null;
   movie: MovieDTO;
