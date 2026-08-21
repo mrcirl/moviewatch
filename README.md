@@ -23,7 +23,7 @@ Jellyfin server, available to stream, or worth requesting through
 docker compose up -d --build
 ```
 
-This builds the app and starts it on [http://localhost:3000](http://localhost:3000),
+This builds the app and starts it on [http://localhost:7000](http://localhost:7000),
 storing its SQLite database in a named Docker volume (`moviewatch-data`) so it
 survives rebuilds. On first visit you'll be asked to set a password.
 
@@ -48,10 +48,10 @@ via "Run workflow" on any branch). One-time setup:
      | --- | --- |
      | Repository | `ghcr.io/mrcirl/moviewatch:latest` |
      | Network Type | Bridge |
-     | Port | `3000` → `3000` (or any host port you prefer) |
+     | Port | `7000` → `7000` (or any host port you prefer) |
      | Path | `/mnt/user/appdata/moviewatch` → `/data` |
 
-4. Apply, then open `http://<unraid-ip>:3000` and set your password on first
+4. Apply, then open `http://<unraid-ip>:7000` and set your password on first
    visit. The SQLite database lives entirely under the appdata path above, so
    it's included in whatever backs up `/mnt/user/appdata` (e.g. the CA
    Appdata Backup plugin).
@@ -125,7 +125,7 @@ npx prisma migrate dev --name init   # first run only: creates prisma/dev.db
 npm run dev
 ```
 
-Then open [http://localhost:3000](http://localhost:3000).
+Then open [http://localhost:7000](http://localhost:7000).
 
 ## Tech stack
 

@@ -1,15 +1,25 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import type { PersonDTO, WatchlistItemDTO } from '@/lib/types';
 import TagPicker from '@/components/TagPicker';
 
 const LETTERS = ['#', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')];
 
+// Give a beat after the last person is tagged before committing (so picking
+// two or three people doesn't yank the card away after the first click),
+// then another beat after it's confirmed before it actually leaves the grid.
+const TAG_COMMIT_DELAY_MS = 900;
+const LEAVE_DELAY_MS = 600;
+
 function letterOf(title: string): string {
   const raw = title.trim().charAt(0).toUpperCase();
   return /[A-Z]/.test(raw) ? raw : '#';
+}
+
+function decadeOf(year: number | null): string {
+  return year ? `${Math.floor(year / 10) * 10}s` : 'Unknown';
 }
 
 export default function BrowseClient({
@@ -22,6 +32,21 @@ export default function BrowseClient({
   const [items, setItems] = useState(initialItems);
   const [genreFilter, setGenreFilter] = useState<string>('ALL');
   const [ratingFilter, setRatingFilter] = useState<string>('ALL');
+  const [decadeFilter, setDecadeFilter] = useState<string>('ALL');
+  const [pending, setPending] = useState<Map<number, number[]>>(new Map());
+  const [leaving, setLeaving] = useState<Set<number>>(new Set());
+  const pendingRef = useRef<Map<number, number[]>>(new Map());
+  const commitTimers = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+  const leaveTimers = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+
+  useEffect(() => {
+    const commits = commitTimers.current;
+    const leaves = leaveTimers.current;
+    return () => {
+      commits.forEach(clearTimeout);
+      leaves.forEach(clearTimeout);
+    };
+  }, []);
 
   const genres = useMemo(() => {
     const set = new Set<string>();
@@ -35,38 +60,62 @@ export default function BrowseClient({
     return [...set].sort();
   }, [items]);
 
+  const decades = useMemo(() => {
+    const set = new Set<string>();
+    for (const item of items) set.add(decadeOf(item.movie.year));
+    return [...set].sort();
+  }, [items]);
+
+  function passesGenre(item: WatchlistItemDTO) {
+    return genreFilter === 'ALL' || item.movie.genres.includes(genreFilter);
+  }
+  function passesRating(item: WatchlistItemDTO) {
+    return ratingFilter === 'ALL' || item.movie.certification === ratingFilter;
+  }
+  function passesDecade(item: WatchlistItemDTO) {
+    return decadeFilter === 'ALL' || decadeOf(item.movie.year) === decadeFilter;
+  }
+
   // Facet counts: how many items each option would leave you with, given the
-  // *other* filter's current value — so switching one filter updates the
-  // other's counts instead of always reflecting the unfiltered total.
+  // *other two* filters' current values — so changing one filter updates the
+  // others' counts instead of always reflecting the unfiltered total.
   const genreCounts = useMemo(() => {
     const counts = new Map<string, number>();
     let all = 0;
     for (const item of items) {
-      if (ratingFilter !== 'ALL' && item.movie.certification !== ratingFilter) continue;
+      if (!passesRating(item) || !passesDecade(item)) continue;
       all++;
       for (const g of item.movie.genres) counts.set(g, (counts.get(g) ?? 0) + 1);
     }
     return { counts, all };
-  }, [items, ratingFilter]);
+  }, [items, ratingFilter, decadeFilter]);
 
   const ratingCounts = useMemo(() => {
     const counts = new Map<string, number>();
     let all = 0;
     for (const item of items) {
-      if (genreFilter !== 'ALL' && !item.movie.genres.includes(genreFilter)) continue;
+      if (!passesGenre(item) || !passesDecade(item)) continue;
       all++;
       if (item.movie.certification) counts.set(item.movie.certification, (counts.get(item.movie.certification) ?? 0) + 1);
     }
     return { counts, all };
-  }, [items, genreFilter]);
+  }, [items, genreFilter, decadeFilter]);
+
+  const decadeCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    let all = 0;
+    for (const item of items) {
+      if (!passesGenre(item) || !passesRating(item)) continue;
+      all++;
+      const decade = decadeOf(item.movie.year);
+      counts.set(decade, (counts.get(decade) ?? 0) + 1);
+    }
+    return { counts, all };
+  }, [items, genreFilter, ratingFilter]);
 
   const filtered = useMemo(() => {
-    return items.filter((item) => {
-      if (genreFilter !== 'ALL' && !item.movie.genres.includes(genreFilter)) return false;
-      if (ratingFilter !== 'ALL' && item.movie.certification !== ratingFilter) return false;
-      return true;
-    });
-  }, [items, genreFilter, ratingFilter]);
+    return items.filter((item) => passesGenre(item) && passesRating(item) && passesDecade(item));
+  }, [items, genreFilter, ratingFilter, decadeFilter]);
 
   const groups = useMemo(() => {
     const map = new Map<string, WatchlistItemDTO[]>();
@@ -82,7 +131,27 @@ export default function BrowseClient({
     document.getElementById(`letter-${letter}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  async function tagPerson(id: number, personIds: number[]) {
+  function togglePerson(id: number, personId: number) {
+    const current = pendingRef.current.get(id) ?? [];
+    const next = current.includes(personId) ? current.filter((p) => p !== personId) : [...current, personId];
+    const map = new Map(pendingRef.current);
+    map.set(id, next);
+    pendingRef.current = map;
+    setPending(map);
+
+    const existing = commitTimers.current.get(id);
+    if (existing) clearTimeout(existing);
+    commitTimers.current.set(
+      id,
+      setTimeout(() => commitTagging(id), TAG_COMMIT_DELAY_MS),
+    );
+  }
+
+  async function commitTagging(id: number) {
+    commitTimers.current.delete(id);
+    const personIds = pendingRef.current.get(id) ?? [];
+    if (personIds.length === 0) return;
+
     const res = await fetch(`/api/watchlist/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -90,9 +159,18 @@ export default function BrowseClient({
     });
     if (!res.ok) return;
     const { item } = await res.json();
-    // Tagging with anyone graduates it onto the main watchlist, so it drops out of here.
+
+    // Tagging with anyone graduates it onto the main watchlist — fade it out
+    // before it actually drops out of here, rather than yanking it away.
     if (item.people.length > 0) {
-      setItems((prev) => prev.filter((i) => i.id !== id));
+      setLeaving((prev) => new Set(prev).add(id));
+      leaveTimers.current.set(
+        id,
+        setTimeout(() => {
+          leaveTimers.current.delete(id);
+          setItems((prev) => prev.filter((i) => i.id !== id));
+        }, LEAVE_DELAY_MS),
+      );
     } else {
       setItems((prev) => prev.map((i) => (i.id === id ? item : i)));
     }
@@ -100,6 +178,12 @@ export default function BrowseClient({
 
   async function discard(id: number) {
     if (!confirm('Discard this film? It will be removed entirely — you can re-import it later.')) return;
+    const commitTimer = commitTimers.current.get(id);
+    if (commitTimer) clearTimeout(commitTimer);
+    commitTimers.current.delete(id);
+    const leaveTimer = leaveTimers.current.get(id);
+    if (leaveTimer) clearTimeout(leaveTimer);
+    leaveTimers.current.delete(id);
     setItems((prev) => prev.filter((i) => i.id !== id));
     await fetch(`/api/watchlist/${id}`, { method: 'DELETE' });
   }
@@ -132,6 +216,14 @@ export default function BrowseClient({
           counts={ratingCounts.counts}
           allCount={ratingCounts.all}
         />
+        <FilterGroup
+          label="Decade"
+          value={decadeFilter}
+          onChange={setDecadeFilter}
+          options={decades}
+          counts={decadeCounts.counts}
+          allCount={decadeCounts.all}
+        />
       </div>
 
       {filtered.length === 0 ? (
@@ -163,7 +255,12 @@ export default function BrowseClient({
                 <h2 className="text-sm font-semibold text-base-400">{letter}</h2>
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                   {groups.get(letter)!.map((item) => (
-                    <div key={item.id} className="card space-y-2 p-3">
+                    <div
+                      key={item.id}
+                      className={`card space-y-2 p-3 transition-opacity duration-500 ${
+                        leaving.has(item.id) ? 'pointer-events-none opacity-0' : 'opacity-100'
+                      }`}
+                    >
                       <div className="relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-base-800">
                         {item.movie.posterPath ? (
                           <Image
@@ -189,8 +286,8 @@ export default function BrowseClient({
                       </div>
                       <TagPicker
                         options={people}
-                        selectedIds={[]}
-                        onToggle={(personId) => tagPerson(item.id, [personId])}
+                        selectedIds={pending.get(item.id) ?? []}
+                        onToggle={(personId) => togglePerson(item.id, personId)}
                         emptyHint="Add people on the People page."
                       />
                       <button onClick={() => discard(item.id)} className="btn-danger w-full text-xs">
