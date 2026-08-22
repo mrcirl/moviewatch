@@ -52,6 +52,7 @@ export interface TmdbMovieDetails {
   poster_path: string | null;
   overview: string;
   runtime: number | null;
+  imdb_id?: string | null;
   genres?: { id: number; name: string }[];
   'watch/providers'?: {
     results?: Record<
@@ -111,6 +112,10 @@ export function extractTrailerKey(details: TmdbMovieDetails): string | null {
 
 export function trailerUrl(key: string | null | undefined): string | null {
   return key ? `https://www.youtube.com/watch?v=${key}` : null;
+}
+
+export function imdbUrl(imdbId: string | null | undefined): string | null {
+  return imdbId ? `https://www.imdb.com/title/${imdbId}/` : null;
 }
 
 /** Genre names (e.g. ["Action", "Comedy"]) from a movie details response. */

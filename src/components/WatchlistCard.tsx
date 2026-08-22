@@ -94,6 +94,16 @@ export default function WatchlistCard({
                   ▶ Trailer
                 </a>
               )}
+              {item.movie.imdbUrl && (
+                <a
+                  href={item.movie.imdbUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs text-accent-400 hover:underline"
+                >
+                  IMDb ↗
+                </a>
+              )}
             </div>
             {watched && (
               <div className="mt-1.5 flex items-center gap-1.5">
