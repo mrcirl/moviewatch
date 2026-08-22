@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
           releaseDate: details.release_date,
           certification: extractCertification(details, settings.tmdbRegion || 'US'),
           trailerKey: extractTrailerKey(details),
+          imdbId: details.imdb_id,
           genres: extractGenreNames(details).join(','),
         },
       });

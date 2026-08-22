@@ -18,6 +18,7 @@ model Movie {
   releaseDate String?
   certification String?
   trailerKey  String?
+  imdbId      String?
   genres      String?
   createdAt   DateTime @default(now())
 
