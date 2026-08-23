@@ -22,6 +22,9 @@ model Movie {
   genres      String?
   createdAt   DateTime @default(now())
 
+  availabilityJson      String?
+  availabilityCheckedAt DateTime?
+
   watchlistItems WatchlistItem[]
 }
 
