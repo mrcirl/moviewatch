@@ -70,6 +70,7 @@ export async function POST() {
             releaseDate: details.release_date,
             certification: extractCertification(details, region),
             trailerKey: extractTrailerKey(details),
+            imdbId: details.imdb_id,
             genres: extractGenreNames(details).join(','),
           },
         });

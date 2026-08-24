@@ -9,6 +9,7 @@ export interface MovieDTO {
   releaseDate: string | null;
   certification: string | null;
   trailerUrl: string | null;
+  imdbUrl: string | null;
   genres: string[];
 }
 

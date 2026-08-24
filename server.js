@@ -11,11 +11,30 @@
 // Docker bridge network) so the real client address from X-Forwarded-For is
 // used instead — see README.
 const { createServer } = require('node:http');
+const crypto = require('node:crypto');
 const next = require('next');
 const { normalizeIp, isIpAllowlisted } = require('./lib/net');
 
 const port = parseInt(process.env.PORT || '7000', 10);
 const trustedProxyCidrs = (process.env.TRUSTED_PROXY_CIDRS || '').trim();
+
+// Availability (Jellyfin/Plex/Seerr/TMDB) is checked on a timer instead of
+// on every watchlist page load — see /api/availability/refresh. That route
+// has no browser session to authenticate against, so it's gated on this
+// process-local secret instead; only this server.js process ever sends it.
+const internalTriggerSecret = crypto.randomBytes(32).toString('hex');
+process.env.INTERNAL_TRIGGER_SECRET = internalTriggerSecret;
+const AVAILABILITY_REFRESH_INTERVAL_MS = 30 * 60 * 1000;
+
+function triggerAvailabilityRefresh() {
+  fetch(`http://127.0.0.1:${port}/api/availability/refresh`, {
+    method: 'POST',
+    headers: { 'x-internal-trigger': internalTriggerSecret },
+  })
+    .then((res) => res.json())
+    .then((result) => console.log('> Availability refresh:', result))
+    .catch((err) => console.error('> Availability refresh failed:', err.message));
+}
 
 const app = next({ dev: false });
 const handle = app.getRequestHandler();
@@ -49,5 +68,7 @@ app.prepare().then(() => {
     handle(req, res);
   }).listen(port, '0.0.0.0', () => {
     console.log(`> Ready on port ${port}`);
+    setTimeout(triggerAvailabilityRefresh, 15_000);
+    setInterval(triggerAvailabilityRefresh, AVAILABILITY_REFRESH_INTERVAL_MS);
   });
 });

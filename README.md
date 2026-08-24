@@ -14,6 +14,8 @@ Jellyfin server, available to stream, or worth requesting through
 - **Availability** — each entry shows whether it's already in your Jellyfin
   library (with a direct link), what streaming services have it, and its
   request status on Seerr — with a one-click "Request via Seerr" button.
+  Checked in the background every 30 minutes rather than on each page load,
+  so opening the watchlist stays fast.
 - Single-user, password-protected, no external accounts required — or skip
   the password entirely for requests from a trusted LAN range (see below).
 

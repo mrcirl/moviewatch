@@ -18,8 +18,12 @@ model Movie {
   releaseDate String?
   certification String?
   trailerKey  String?
+  imdbId      String?
   genres      String?
   createdAt   DateTime @default(now())
+
+  availabilityJson      String?
+  availabilityCheckedAt DateTime?
 
   watchlistItems WatchlistItem[]
 }
